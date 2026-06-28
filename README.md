@@ -1,5 +1,5 @@
 # Project-Muse
-
+MUSE: Multi UAV Swarm Exploration (using RL)
 A research project focused on reinforcement learning, agents, and experimental baselines.
 
 ## Project Structure
