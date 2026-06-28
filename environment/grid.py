@@ -8,7 +8,7 @@ class OccupancyGrid:
         self.grid = [[0 for _ in range(width)] for _ in range(height)]
 
     def reset(self):
-        self.grid = [[0 for _ in range(self.width)] for _ in range(self.height)]
+        self.grid = [[-1 for _ in range(self.width)] for _ in range(self.height)]
 
     def get_cell(self, x, y):
         return self.grid[y][x]
