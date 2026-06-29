@@ -66,11 +66,11 @@ true_map.randomize_obstacles(0.10) #randomize the obstacle generation
 robot_map.reset()
 
 drones = [ #lets assume to start at 0,0 for all the drones
-    Drone(0, 0)
-    # Drone(0, 0),
-    # Drone(0, 0),
-    # Drone(0, 0),
-    # Drone(0, 0),
+    Drone(0, 0),
+    Drone(0, 0),
+    Drone(0, 0),
+    Drone(0, 0),
+    Drone(0, 0),
 ]
 
 pygame.init()
@@ -114,6 +114,12 @@ while running:
     #Drone visualization
     DRONE_COLOR = Color.BLUE
 
+    #move the drones
+    for drone in drones:
+        drone.update_map(true_map, robot_map)
+        drone.move(true_map)
+
+    #draw the drones
     for drone in drones:
         pygame.draw.circle(
             screen,
