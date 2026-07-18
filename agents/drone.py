@@ -1,30 +1,43 @@
-import random
 
 class Drone:
-    def __init__(self, x, y, heading=0):
+    def __init__(self, x, y, strategy, heading=0):
         self.x = x
         self.y = y
         self.heading = heading
         self.visited_cells = set()
+        self.strategy = strategy
 
-    def move(self, grid):
-        directions = [
-            (0, 1),
-            (0, -1),
-            (-1, 0),
-            (1, 0)
-        ]
+        # Useful later
+        self.total_distance = 0
+        self.id = None
 
-        random.shuffle(directions)
+    def execute(self, action, true_map):
 
-        for dx, dy in directions:
-            newX = self.x + dx
-            newY = self.y + dy
+        dx, dy = action.delta()
 
-            if grid.is_valid(newX, newY):
-                self.x = newX
-                self.y = newY
-                return
+        new_x = self.x + dx
+        new_y = self.y + dy
+
+        if true_map.is_valid(new_x, new_y):
+            self.x = new_x
+            self.y = new_y
+            self.total_distance += 1
+
+    def step(self, true_map, robot_map, nearby_agents):
+        """
+        One simulation step.
+        """
+
+        action = self.strategy.choose_action(
+            self,
+            robot_map,
+            true_map,
+            nearby_agents,
+        )
+
+        self.execute(action, true_map)
+
+        self.update_map(true_map, robot_map)
 
     def sense(self):
         pass
@@ -32,6 +45,7 @@ class Drone:
     def update_map(self, true_map, robot_map):
         cell = true_map.get_cell(self.x, self.y)
         robot_map.set_cell(self.x, self.y, cell)
+
         self.visited_cells.add((self.x, self.y))
 
     def __repr__(self):

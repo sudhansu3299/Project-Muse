@@ -1,7 +1,8 @@
 import pygame
-from environment.grid import OccupancyGrid
+
+from environment.simulator import Simulator
 from models.constants import Cell, Color
-from agents.drone import Drone
+from strategy.random_strategy import RandomStrategy
 
 
 # ---------------- Constants ----------------
@@ -11,6 +12,10 @@ CELL_SIZE = 8
 GRID_HEIGHT = 100
 GRID_WIDTH = 100
 
+NUM_DRONES = 5
+OBSTACLE_PERCENTAGE = 0.10
+COMMUNICATION_RADIUS = 10
+
 TOP_MARGIN = 40
 PADDING = 20
 
@@ -19,18 +24,29 @@ PANEL_WIDTH = GRID_WIDTH * CELL_SIZE
 WIDTH = PANEL_WIDTH * 2 + PADDING
 HEIGHT = GRID_HEIGHT * CELL_SIZE + TOP_MARGIN
 
+
 GRID_COLORS = {
     Cell.UNEXPLORED: Color.GRAY,
     Cell.FREE: Color.WHITE,
     Cell.OBSTACLE: Color.BLACK,
 }
 
-#Draw the grid for true and robot map
-def draw_grid(screen, grid, offset_x=0, offset_y=0):
-    for y in range(grid.height):
-        for x in range(grid.width):
-            color = GRID_COLORS[grid.get_cell(x, y)]
+DRONE_COLOR = Color.BLUE
 
+
+# ---------------- Rendering ----------------
+
+def draw_grid(screen, grid, offset_x=0, offset_y=0):
+
+    for y in range(grid.height):
+
+        for x in range(grid.width):
+
+            color = GRID_COLORS[
+                grid.get_cell(x, y)
+            ]
+
+            # Draw cell
             pygame.draw.rect(
                 screen,
                 color,
@@ -42,7 +58,7 @@ def draw_grid(screen, grid, offset_x=0, offset_y=0):
                 ),
             )
 
-            #grid lines separation with black lines
+            # Draw grid lines
             pygame.draw.rect(
                 screen,
                 (180, 180, 180),
@@ -56,52 +72,137 @@ def draw_grid(screen, grid, offset_x=0, offset_y=0):
             )
 
 
+def draw_drones(screen, drones):
 
-# ---------------- Initialization ----------------
+    for drone in drones:
 
-true_map = OccupancyGrid(GRID_HEIGHT, GRID_WIDTH) #true map of the world
-robot_map = OccupancyGrid(GRID_HEIGHT, GRID_WIDTH) #what the robot perceives as of now
+        pygame.draw.circle(
+            screen,
+            DRONE_COLOR,
+            (
+                PANEL_WIDTH
+                + PADDING
+                + drone.x * CELL_SIZE
+                + CELL_SIZE // 2,
 
-true_map.randomize_obstacles(0.10) #randomize the obstacle generation
-robot_map.reset()
+                TOP_MARGIN
+                + drone.y * CELL_SIZE
+                + CELL_SIZE // 2,
+            ),
+            CELL_SIZE // 2,
+            )
 
-drones = [ #lets assume to start at 0,0 for all the drones
-    Drone(0, 0),
-    Drone(0, 0),
-    Drone(0, 0),
-    Drone(0, 0),
-    Drone(0, 0),
-]
+
+# ---------------- Simulator Initialization ----------------
+
+strategy = RandomStrategy()
+
+simulator = Simulator(
+    grid_width=GRID_WIDTH,
+    grid_height=GRID_HEIGHT,
+    num_drones=NUM_DRONES,
+    obstacle_percentage=OBSTACLE_PERCENTAGE,
+    strategy=strategy,
+    communication_radius=COMMUNICATION_RADIUS,
+)
+
+
+# ---------------- Pygame Initialization ----------------
 
 pygame.init()
 
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Occupancy Grid")
+screen = pygame.display.set_mode(
+    (WIDTH, HEIGHT)
+)
 
-font = pygame.font.SysFont("Arial", 24, bold=True)
+pygame.display.set_caption(
+    "Multi-UAV Exploration Simulator"
+)
+
+font = pygame.font.SysFont(
+    "Arial",
+    24,
+    bold=True
+)
+
+clock = pygame.time.Clock()
 
 running = True
 
+
 # ---------------- Main Loop ----------------
+
 while running:
+
+    # ----- Handle Events -----
+
     for event in pygame.event.get():
+
         if event.type == pygame.QUIT:
             running = False
 
-    screen.fill((255, 255, 255))
 
-    # ----- Titles -----
-    screen.blit(font.render("Ground Truth", True, (0, 0, 0)), (20, 8))
-    screen.blit(
-        font.render("Robot Map", True, (0, 0, 0)),
-        (PANEL_WIDTH + PADDING + 20, 8),
+    # ----- Advance Simulation -----
+
+    simulator.step()
+
+
+    # ----- Clear Screen -----
+
+    screen.fill(
+        (255, 255, 255)
     )
 
-    # ----- Draw the two grids -----
-    draw_grid(screen, true_map, 0, TOP_MARGIN)
-    draw_grid(screen, robot_map, PANEL_WIDTH + PADDING, TOP_MARGIN)
 
-    divider_x = PANEL_WIDTH + PADDING // 2 #divider between the two grids
+    # ----- Titles -----
+
+    screen.blit(
+        font.render(
+            "Ground Truth",
+            True,
+            (0, 0, 0)
+        ),
+        (20, 8)
+    )
+
+    screen.blit(
+        font.render(
+            "Robot Map",
+            True,
+            (0, 0, 0)
+        ),
+        (
+            PANEL_WIDTH
+            + PADDING
+            + 20,
+            8
+        ),
+    )
+
+
+    # ----- Draw Maps -----
+
+    draw_grid(
+        screen,
+        simulator.true_map,
+        0,
+        TOP_MARGIN
+    )
+
+    draw_grid(
+        screen,
+        simulator.robot_map,
+        PANEL_WIDTH + PADDING,
+        TOP_MARGIN
+    )
+
+
+    # ----- Divider -----
+
+    divider_x = (
+            PANEL_WIDTH
+            + PADDING // 2
+    )
 
     pygame.draw.line(
         screen,
@@ -111,26 +212,20 @@ while running:
         3,
     )
 
-    #Drone visualization
-    DRONE_COLOR = Color.BLUE
 
-    #move the drones
-    for drone in drones:
-        drone.update_map(true_map, robot_map)
-        drone.move(true_map)
+    # ----- Draw Drones -----
 
-    #draw the drones
-    for drone in drones:
-        pygame.draw.circle(
-            screen,
-            DRONE_COLOR,
-            (
-                PANEL_WIDTH + PADDING + drone.x * CELL_SIZE + CELL_SIZE // 2,
-                TOP_MARGIN + drone.y * CELL_SIZE + CELL_SIZE // 2,
-            ),
-            CELL_SIZE // 2,
-            )
+    draw_drones(
+        screen,
+        simulator.drones
+    )
+
+
+    # ----- Update Display -----
 
     pygame.display.flip()
+
+    # Limit simulation speed
+    clock.tick(30)
 
 pygame.quit()
