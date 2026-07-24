@@ -1,4 +1,5 @@
 from enum import IntEnum
+import pygame
 
 class Cell(IntEnum):
     UNEXPLORED = -1
@@ -14,3 +15,8 @@ class Color:
     YELLOW = (255, 220, 0)
     ORANGE = (255, 140, 0)
     PURPLE = (180, 0, 255)
+
+class FontSize:
+    TITLE = 24
+    METRICS = 16
+    BUTTON = 16

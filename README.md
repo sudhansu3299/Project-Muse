@@ -6,7 +6,7 @@ A research project focused on reinforcement learning, agents, and experimental b
 
 ```
 Project-Muse/
-├── environment/      # Environment configurations and setups
+├── environment/     # Environment configurations and setups
 ├── agents/          # Agent implementations
 ├── baselines/       # Baseline models and methods
 ├── rl/              # Reinforcement learning algorithms
@@ -21,8 +21,8 @@ Project-Muse/
 [Add setup instructions here]
 
 ## Usage
+How to run?
 
-[Add usage instructions here]
 
 ## License
 

@@ -19,16 +19,25 @@ class OccupancyGrid:
     def is_valid(self, x, y):
         return 0 <= x < self.width and 0 <= y < self.height
 
+    def is_inside(self, x, y):
+        return (
+                0 <= x < self.width
+                and
+                0 <= y < self.height
+        )
+
     def is_obstacle(self, x, y):
         return self.grid[y][x] == 1
 
-    def randomize_obstacles(self, probability=0.10):
+    def randomize_obstacles(self, obstacle_percentage, seed=None):
+        rng = random.Random(seed) #To keep the map intact for all strategies
+
         for y in range(self.height):
             for x in range(self.width):
-                if random.random() < probability:
-                    self.set_cell(x,y, Cell.OBSTACLE)
+                if rng.random() < obstacle_percentage:
+                    self.set_cell(x, y, Cell.OBSTACLE)
                 else:
-                    self.set_cell(x,y, Cell.FREE)
+                    self.set_cell(x, y, Cell.FREE)
 
 
 #[y][x] because the grid is stored as x and y cartesian coordinates.

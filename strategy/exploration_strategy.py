@@ -1,4 +1,5 @@
 #ABC: abstract base classes
+#Interface for strategies
 
 from abc import ABC, abstractmethod
 from models.action import Action

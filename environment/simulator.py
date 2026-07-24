@@ -1,5 +1,6 @@
 from environment.grid import OccupancyGrid
 from agents.drone import Drone
+from models.constants import Cell
 
 
 # Simulator captures the state of the environment
@@ -13,6 +14,7 @@ class Simulator:
             obstacle_percentage,
             strategy,
             communication_radius=10,
+            map_seed=None,
     ):
 
         self.grid_width = grid_width
@@ -30,9 +32,12 @@ class Simulator:
             grid_width
         )
 
+        self.map_seed = map_seed
+
         self.true_map.randomize_obstacles(
-            obstacle_percentage
-        )
+            obstacle_percentage,
+            seed=map_seed
+)
 
         self.robot_map.reset()
 
@@ -93,3 +98,52 @@ class Simulator:
                 nearby_agents.append(other)
 
         return nearby_agents
+
+    def get_coverage(self):
+
+        known_cells = 0
+        total_cells = (
+                self.grid_width
+                * self.grid_height
+        )
+
+        for y in range(self.grid_height):
+            for x in range(self.grid_width):
+
+                if (
+                        self.robot_map.get_cell(x, y)
+                        != Cell.UNEXPLORED
+                ):
+                    known_cells += 1
+
+        return (
+                known_cells
+                / total_cells
+        ) * 100
+
+    def get_total_distance(self):
+
+        return sum(
+            drone.total_distance
+            for drone in self.drones
+        )
+
+    def get_overlap_percentage(self):
+
+        total_sensed = sum(
+            drone.total_sensed_cells
+            for drone in self.drones
+        )
+
+        redundant_sensed = sum(
+            drone.redundant_sensed_cells
+            for drone in self.drones
+        )
+
+        if total_sensed == 0:
+            return 0.0
+
+        return (
+                redundant_sensed
+                / total_sensed
+        ) * 100
