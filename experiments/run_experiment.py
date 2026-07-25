@@ -90,8 +90,8 @@ def run_experiment(
         )
 
         # Stop if target coverage reached
-        if coverage >= TARGET_COVERAGE:
-            break
+        # if coverage >= TARGET_COVERAGE:
+        #     break
 
     # ---------------- Save Results ----------------
 

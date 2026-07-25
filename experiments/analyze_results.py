@@ -86,6 +86,80 @@ def analyze_all_runs():
     for run_dir in run_dirs:
         plot_run(run_dir)
 
+def plot_aggregate_coverage():
+
+    csv_files = glob.glob(
+        os.path.join(
+            RESULTS_DIR,
+            "run_*",
+            "*.csv"
+        )
+    )
+
+    frames = []
+
+    for file in csv_files:
+        df = pd.read_csv(file)
+        frames.append(df)
+
+    data = pd.concat(
+        frames,
+        ignore_index=True
+    )
+
+    plt.figure(figsize=(10, 6))
+
+    for strategy, strategy_df in data.groupby("strategy"):
+
+        stats = (
+            strategy_df
+            .groupby("timestep")["coverage"]
+            .agg(["mean", "std"])
+            .reset_index()
+        )
+
+        plt.plot(
+            stats["timestep"],
+            stats["mean"],
+            label=strategy
+        )
+
+        plt.fill_between(
+            stats["timestep"],
+            stats["mean"] - stats["std"],
+            stats["mean"] + stats["std"],
+            alpha=0.2
+        )
+
+    plt.xlabel("Simulation Timestep")
+    plt.ylabel("Coverage (%)")
+
+    plt.title(
+        "Multi-UAV Exploration Performance"
+    )
+
+    plt.legend()
+    plt.grid(True)
+
+    os.makedirs(
+        PLOTS_DIR,
+        exist_ok=True
+    )
+
+    plt.savefig(
+        os.path.join(
+            PLOTS_DIR,
+            "aggregate_coverage.png"
+        ),
+        dpi=300,
+        bbox_inches="tight"
+    )
+
+    plt.close()
 
 if __name__ == "__main__":
     analyze_all_runs()
+
+    # Aggregate plot:
+    # Mean +/- std across ALL runs
+    plot_aggregate_coverage()
