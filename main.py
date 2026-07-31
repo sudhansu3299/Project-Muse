@@ -2,7 +2,10 @@ import pygame
 
 from environment.simulator import Simulator
 from models.constants import Cell, Color, FontSize
+
 from strategy.random_strategy import RandomStrategy
+from strategy.frontier_strategy import FrontierStrategy
+
 from metrics.metrics_collector import MetricsCollector
 
 # ---------------- Constants ----------------
@@ -95,10 +98,43 @@ def draw_drones(screen, drones):
             CELL_SIZE // 2,
             )
 
+def draw_frontiers(
+        screen,
+        frontiers
+):
+    for x, y in frontiers:
+
+        pygame.draw.circle(
+            screen,
+            (255, 0, 255),
+            (
+                PANEL_WIDTH
+                + PADDING
+                + x * CELL_SIZE
+                + CELL_SIZE // 2,
+
+                TOP_MARGIN
+                + y * CELL_SIZE
+                + CELL_SIZE // 2,
+            ),
+            2
+        )
 
 # ---------------- Simulator Initialization ----------------
 
-strategy = RandomStrategy()
+# strategy = RandomStrategy()
+#
+# simulator = Simulator(
+#     grid_width=GRID_WIDTH,
+#     grid_height=GRID_HEIGHT,
+#     num_drones=NUM_DRONES,
+#     obstacle_percentage=OBSTACLE_PERCENTAGE,
+#     strategy=strategy,
+#     communication_radius=COMMUNICATION_RADIUS,
+#     map_seed=MAP_SEED,
+# )
+
+strategy = FrontierStrategy()
 
 simulator = Simulator(
     grid_width=GRID_WIDTH,
@@ -156,7 +192,7 @@ pause_button = pygame.Rect(
 )
 
 metrics_collector = MetricsCollector(
-    strategy_name="random",
+    strategy_name="frontier",
     run_id=1,
     map_seed=MAP_SEED,
 )
@@ -194,10 +230,13 @@ while running:
             simulator.get_total_distance()
         )
 
+        overlap_percentage = simulator.get_overlap_percentage()
+
         metrics_collector.record(
             timestep=simulator.timestep,
             coverage=coverage,
             total_distance=total_distance,
+            overlap_percentage=overlap_percentage,
         )
 
         if (
@@ -266,6 +305,7 @@ while running:
     metrics_text = metrics_font.render(
         f"Step: {simulator.timestep}  |  "
         f"Coverage: {coverage:.2f}%  |  "
+        f"Overlap: {simulator.get_overlap_percentage():.2f}%  |  "
         f"Time: {elapsed_time:.1f}s",
         True,
         (40, 90, 160)
@@ -327,6 +367,15 @@ while running:
         simulator.robot_map,
         PANEL_WIDTH + PADDING,
         TOP_MARGIN
+    )
+
+    frontiers = strategy.detect_frontiers(
+        simulator.robot_map
+    )
+
+    draw_frontiers(
+        screen,
+        frontiers
     )
 
 

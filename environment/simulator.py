@@ -37,16 +37,61 @@ class Simulator:
         self.true_map.randomize_obstacles(
             obstacle_percentage,
             seed=map_seed
-)
+        )
+
+        #This is so that the spawned drones are not trapped inside the obstacle
+        center_x = grid_width // 2
+        center_y = grid_height // 2
+
+        spawn_clearance = 3
+
+        for dy in range(
+                -spawn_clearance,
+                spawn_clearance + 1
+        ):
+            for dx in range(
+                    -spawn_clearance,
+                    spawn_clearance + 1
+            ):
+
+                x = center_x + dx
+                y = center_y + dy
+
+                if self.true_map.is_inside(x, y):
+                    self.true_map.set_cell(
+                        x,
+                        y,
+                        Cell.FREE
+                    )
+        start_positions = [
+            (center_x, center_y),
+            (center_x + 1, center_y),
+            (center_x - 1, center_y),
+            (center_x, center_y + 1),
+            (center_x, center_y - 1),
+        ]
 
         self.robot_map.reset()
 
         # Create drones
-        # Each drone receives the strategy
-        self.drones = [
-            Drone(0, 0, strategy)
-            for _ in range(num_drones)
-        ]
+        # Each drone receives the strategy and ensure that all of them start from different starting points
+        self.drones = []
+
+        for i in range(num_drones):
+
+            x, y = start_positions[
+                i % len(start_positions)
+                ]
+
+            drone = Drone(
+                x,
+                y,
+                strategy
+            )
+
+            drone.id = i
+
+            self.drones.append(drone)
 
         self.timestep = 0
 
