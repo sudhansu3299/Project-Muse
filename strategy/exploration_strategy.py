@@ -50,3 +50,14 @@ class ExplorationStrategy(ABC):
             (p1[0] - p2[0]) ** 2 +
             (p1[1] - p2[1]) ** 2
         )
+
+    def prepare_step(
+            self,
+            drones,
+            robot_map
+    ):
+        """
+        Called once before all drones move.
+        Default implementation does nothing.
+        """
+        pass

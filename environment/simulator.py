@@ -20,6 +20,7 @@ class Simulator:
         self.grid_width = grid_width
         self.grid_height = grid_height
         self.communication_radius = communication_radius
+        self.strategy = strategy
 
         # Create maps
         self.true_map = OccupancyGrid(
@@ -99,6 +100,11 @@ class Simulator:
         """
         Advance the entire simulation by one timestep.
         """
+
+        self.strategy.prepare_step(
+            self.drones,
+            self.robot_map
+        )
 
         for drone in self.drones:
 
