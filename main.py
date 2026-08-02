@@ -6,6 +6,9 @@ from models.constants import Cell, Color, FontSize
 from strategy.random_strategy import RandomStrategy
 from strategy.frontier_strategy import FrontierStrategy
 
+from environment.coordination.nearest_frontier_assigner import NearestFrontierAssigner
+from environment.coordination.greedy_frontier_assigner import GreedyFrontierAssigner
+
 from metrics.metrics_collector import MetricsCollector
 
 # ---------------- Constants ----------------
@@ -134,7 +137,7 @@ def draw_frontiers(
 #     map_seed=MAP_SEED,
 # )
 
-strategy = FrontierStrategy()
+strategy = FrontierStrategy(NearestFrontierAssigner())
 
 simulator = Simulator(
     grid_width=GRID_WIDTH,
