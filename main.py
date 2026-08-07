@@ -1,5 +1,6 @@
 import pygame
 
+from environment.coordination.cluster_frontier_assigner import ClusterFrontierAssigner
 from environment.simulator import Simulator
 from models.constants import Cell, Color, FontSize
 
@@ -9,9 +10,23 @@ from strategy.frontier_strategy import FrontierStrategy
 from environment.coordination.nearest_frontier_assigner import NearestFrontierAssigner
 from environment.coordination.greedy_frontier_assigner import GreedyFrontierAssigner
 
+from environment.planner.frontier_detector import FrontierDetector
+from environment.utils.frontier_clusterer import FrontierClusterer
+
+
 from metrics.metrics_collector import MetricsCollector
 
 # ---------------- Constants ----------------
+CLUSTER_COLORS = [
+    (255, 0, 0),      # Red
+    (0, 255, 0),      # Green
+    (0, 0, 255),      # Blue
+    (255, 255, 0),    # Yellow
+    (255, 0, 255),    # Magenta
+    (0, 255, 255),    # Cyan
+    (255, 165, 0),    # Orange
+    (128, 0, 255),    # Purple
+]
 
 CELL_SIZE = 8
 
@@ -101,27 +116,33 @@ def draw_drones(screen, drones):
             CELL_SIZE // 2,
             )
 
-def draw_frontiers(
+def draw_clusters(
         screen,
-        frontiers
+        clusters
 ):
-    for x, y in frontiers:
+    for cluster in clusters:
 
-        pygame.draw.circle(
-            screen,
-            (255, 0, 255),
-            (
-                PANEL_WIDTH
-                + PADDING
-                + x * CELL_SIZE
-                + CELL_SIZE // 2,
+        color = CLUSTER_COLORS[
+            cluster.id % len(CLUSTER_COLORS)
+            ]
 
-                TOP_MARGIN
-                + y * CELL_SIZE
-                + CELL_SIZE // 2,
-            ),
-            2
-        )
+        for x, y in cluster.cells:
+
+            pygame.draw.circle(
+                screen,
+                color,
+                (
+                    PANEL_WIDTH
+                    + PADDING
+                    + x * CELL_SIZE
+                    + CELL_SIZE // 2,
+
+                    TOP_MARGIN
+                    + y * CELL_SIZE
+                    + CELL_SIZE // 2,
+                ),
+                2,
+            )
 
 # ---------------- Simulator Initialization ----------------
 
@@ -137,7 +158,9 @@ def draw_frontiers(
 #     map_seed=MAP_SEED,
 # )
 
-strategy = FrontierStrategy(NearestFrontierAssigner())
+strategy = FrontierStrategy(ClusterFrontierAssigner())
+frontier_detector = FrontierDetector()
+frontier_clusterer = FrontierClusterer()
 
 simulator = Simulator(
     grid_width=GRID_WIDTH,
@@ -195,7 +218,7 @@ pause_button = pygame.Rect(
 )
 
 metrics_collector = MetricsCollector(
-    strategy_name="frontier",
+    strategy_name="cluster_frontier",
     run_id=1,
     map_seed=MAP_SEED,
 )
@@ -372,13 +395,18 @@ while running:
         TOP_MARGIN
     )
 
-    frontiers = strategy.detect_frontiers(
+    frontiers = frontier_detector.detect_frontiers(
         simulator.robot_map
     )
 
-    draw_frontiers(
+    clusters = frontier_clusterer.cluster_frontiers(
+        frontiers,
+        simulator.robot_map,
+    )
+
+    draw_clusters(
         screen,
-        frontiers
+        clusters
     )
 
 

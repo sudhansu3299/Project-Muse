@@ -41,6 +41,8 @@ class Drone:
             nearby_agents,
         )
 
+        # print("Action called with:", action)
+
         self.execute(action, true_map)
 
         # Sense again after movement

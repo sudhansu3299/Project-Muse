@@ -1,18 +1,30 @@
 from experiments.run_experiment import run_experiment
-
 from strategy.random_strategy import RandomStrategy
-# from strategy.frontier_strategy import FrontierStrategy
+from strategy.frontier_strategy import FrontierStrategy
 # from strategy.gso_strategy import GSOStrategy
 # from strategy.ppo_strategy import PPOStrategy
+
+from environment.coordination.nearest_frontier_assigner import NearestFrontierAssigner
+from environment.coordination.greedy_frontier_assigner import GreedyFrontierAssigner
+from environment.coordination.cluster_frontier_assigner import ClusterFrontierAssigner
 
 
 NUM_RUNS = 5
 
 strategies = {
-    "random": RandomStrategy,
-    # "frontier": FrontierStrategy,
-    # "gso": GSOStrategy,
-    # "ppo": PPOStrategy,
+    # "random": lambda: RandomStrategy(),
+
+    "nearest_frontier": lambda: FrontierStrategy(
+        NearestFrontierAssigner()
+    ),
+
+    "greedy_frontier": lambda: FrontierStrategy(
+        GreedyFrontierAssigner()
+    ),
+
+    "cluster_frontier": lambda: FrontierStrategy(
+        ClusterFrontierAssigner()
+    ),
 }
 
 
@@ -23,9 +35,9 @@ for run_id in range(1, NUM_RUNS + 1):
 
     print(f"\n===== RUN {run_id} | SEED {map_seed} =====")
 
-    for strategy_name, StrategyClass in strategies.items():
+    for strategy_name, strategy_factory in strategies.items():
 
-        strategy = StrategyClass()
+        strategy = strategy_factory()
 
         run_experiment(
             strategy=strategy,

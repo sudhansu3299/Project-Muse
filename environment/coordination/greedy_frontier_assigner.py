@@ -23,13 +23,20 @@ class GreedyFrontierAssigner(
 
         for drone in drones:
 
-            target = self.find_nearest_frontier(
+            target, path = self.find_nearest_frontier(
                 drone,
                 remaining_frontiers,
                 robot_map,
             )
 
-            assignments[drone.id] = target
+            assignments[drone.id] = {
+                "target": target,
+                "cluster": None,
+                "path": path,
+                "path_index": 0,
+                "cost": len(path) if path else float("inf"),
+                "information_gain": None,
+            }
 
             if target is not None:
                 remaining_frontiers.remove(target)

@@ -1,5 +1,5 @@
 from environment.planner.bfs_planner import BFSPlanner
-from environment.planner.path_utils import PathUtils
+from environment.utils.path_utils import PathUtils
 from strategy.exploration_strategy import ExplorationStrategy
 from models.action import Action
 
@@ -9,6 +9,7 @@ class FrontierStrategy(ExplorationStrategy):
 
         self.frontier_assigner = frontier_assigner
         self.assignments = {}
+        # self.paths = {}  # Cache paths for each drone
 
     def prepare_step(
             self,
@@ -16,16 +17,65 @@ class FrontierStrategy(ExplorationStrategy):
             robot_map,
     ):
         """
-        Default implementation.
-
-        Independent frontier simply asks the assigner
-        to assign a frontier to every drone independently.
+        Only assign clusters when drones need new assignments:
+        - First time (no assignments)
+        - Drone has reached its assigned centroid
         """
+        
+        # Check if any drone needs reassignment
+        needs_reassignment = False
+        
+        for drone in drones:
+            # No assignment yet
+            if drone.id not in self.assignments:
+                needs_reassignment = True
+                break
 
-        self.assignments = self.frontier_assigner.assign(
-            drones,
-            robot_map,
-        )
+            assignment = self.assignments[drone.id]
+
+            if assignment is None:
+                needs_reassignment = True
+                break
+
+            # target = assignment["target"]
+            #
+            # if target is None:
+            #     needs_reassignment = True
+            #     break
+            #
+            # if (drone.x, drone.y) == target:
+            #     needs_reassignment = True
+            #     break
+
+            path = assignment["path"]
+
+            if path is None:
+                needs_reassignment = True
+                break
+
+            if assignment["path_index"] >= len(path) - 1:
+                needs_reassignment = True
+                break
+
+        if needs_reassignment:
+            self.assignments = self.frontier_assigner.assign(
+                drones,
+                robot_map,
+            )
+            
+            # # Rebuild paths for new assignments
+            # bfs_planner = BFSPlanner()
+            # self.paths = {}
+            #
+            # for drone in drones:
+            #     cluster = self.assignments.get(drone.id)
+            #     if cluster is not None:
+            #         path = bfs_planner.find_path(
+            #             start=(drone.x, drone.y),
+            #             goal=cluster.centroid,
+            #             robot_map=robot_map,
+            #         )
+            #         self.paths[drone.id] = path
 
     def choose_action(
             self,
@@ -35,37 +85,35 @@ class FrontierStrategy(ExplorationStrategy):
             nearby_agents,
     ):
 
-        target = self.assignments.get(
+        assignment = self.assignments.get(
             drone.id
         )
 
-        if target is None:
+        if assignment is None:
             return Action.STAY
 
-        bfs_planner = BFSPlanner()
-
-        path = bfs_planner.find_path(
-            start=(drone.x, drone.y),
-            goal=target,
-            robot_map=robot_map,
-        )
+        path = assignment["path"]
 
         if path is None:
             return Action.STAY
 
+        index = assignment["path_index"]
+
+        if index >= len(path) - 1:
+            return Action.STAY
+
+        if (
+                index < len(path) - 1
+                and
+                (drone.x, drone.y) == path[index + 1]
+        ):
+            assignment["path_index"] += 1
+            index += 1
+
         path_utils = PathUtils()
 
-        action = path_utils.path_to_action(
+        return path_utils.path_to_action(
             drone,
             path,
+            index,
         )
-
-        print(
-            f"Drone {drone.id}: "
-            f"pos=({drone.x},{drone.y}), "
-            f"target={target}, "
-            f"path={path}, "
-            f"action={action}"
-        )
-
-        return action

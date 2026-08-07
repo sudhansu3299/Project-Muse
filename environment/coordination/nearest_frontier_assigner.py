@@ -22,13 +22,24 @@ class NearestFrontierAssigner(FrontierAssigner):
 
         for drone in drones:
 
-            target = self.find_nearest_frontier(
+            target, path = self.find_nearest_frontier(
                 drone,
                 frontiers,
                 robot_map,
             )
 
-            assignments[drone.id] = target
+            print(target)
+            print(path)
+            print(type(path))
+
+            assignments[drone.id] = {
+                "target": target,
+                "cluster": None,
+                "path": path,
+                "path_index": 0,
+                "cost": len(path) if path else float("inf"),
+                "information_gain": None,
+            }
 
         return assignments
 
@@ -45,7 +56,7 @@ class NearestFrontierAssigner(FrontierAssigner):
         )
 
         if not frontiers:
-            return None
+            return None, None
 
         queue = deque([start])
 
@@ -64,7 +75,7 @@ class NearestFrontierAssigner(FrontierAssigner):
 
             # Found nearest frontier
             if current in frontiers:
-                return current
+                return current, path
 
             x, y = current
 
@@ -87,4 +98,4 @@ class NearestFrontierAssigner(FrontierAssigner):
                 visited.add(next_cell)
                 queue.append(next_cell)
 
-        return None
+        return None, None

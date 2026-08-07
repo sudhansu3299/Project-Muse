@@ -92,3 +92,20 @@ class BFSPlanner:
         path.reverse()
 
         return path
+
+    def path_length(
+            self,
+            drone,
+            goal,
+            robot_map,
+    ):
+        path = self.find_path(
+            start=(drone.x, drone.y),
+            goal=goal,
+            robot_map=robot_map,
+        )
+
+        if path is None:
+            return float("inf")
+
+        return len(path) - 1
