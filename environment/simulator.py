@@ -198,3 +198,12 @@ class Simulator:
                 redundant_sensed
                 / total_sensed
         ) * 100
+
+    def get_active_drones_count(self):
+        """
+        Returns the number of drones with valid assignments.
+        """
+        if hasattr(self.strategy, 'get_metrics'):
+            metrics = self.strategy.get_metrics()
+            return metrics.get('num_assigned_drones', len(self.drones))
+        return len(self.drones)

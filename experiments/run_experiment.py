@@ -77,12 +77,23 @@ def run_experiment(
             simulator.get_overlap_percentage()
         )
 
+        # Get cluster and active drone metrics
+        num_clusters = 0
+        num_active_drones = 0
+        
+        if hasattr(simulator.strategy, 'get_metrics'):
+            metrics = simulator.strategy.get_metrics()
+            num_clusters = metrics.get('num_clusters', 0)
+            num_active_drones = metrics.get('num_assigned_drones', 0)
+
         # Record this timestep
         metrics_collector.record(
             timestep=simulator.timestep,
             coverage=coverage,
             total_distance=total_distance,
-            overlap_percentage=overlap_percentage
+            overlap_percentage=overlap_percentage,
+            num_clusters=num_clusters,
+            num_active_drones=num_active_drones
         )
 
         # Stop if target coverage reached

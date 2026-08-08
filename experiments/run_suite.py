@@ -13,11 +13,11 @@ NUM_RUNS = 5
 
 strategies = {
     # "random": lambda: RandomStrategy(),
-
-    "nearest_frontier": lambda: FrontierStrategy(
-        NearestFrontierAssigner()
-    ),
-
+    #
+    # "nearest_frontier": lambda: FrontierStrategy(
+    #     NearestFrontierAssigner()
+    # ),
+    #
     "greedy_frontier": lambda: FrontierStrategy(
         GreedyFrontierAssigner()
     ),

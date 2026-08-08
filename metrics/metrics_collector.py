@@ -22,7 +22,9 @@ class MetricsCollector:
             timestep,
             coverage,
             total_distance,
-            overlap_percentage
+            overlap_percentage,
+            num_clusters=0,
+            num_active_drones=0
     ):
 
         """
@@ -36,7 +38,9 @@ class MetricsCollector:
             "timestep": timestep,
             "coverage": coverage,
             "total_distance": total_distance,
-            "overlap_percentage": overlap_percentage
+            "overlap_percentage": overlap_percentage,
+            "num_clusters": num_clusters,
+            "num_active_drones": num_active_drones
         })
 
     def save_csv(self):

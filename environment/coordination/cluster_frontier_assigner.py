@@ -9,6 +9,9 @@ class ClusterFrontierAssigner(FrontierAssigner):
         super().__init__()
 
         self.frontier_clusterer = FrontierClusterer()
+        self.num_clusters = 0
+        self.num_assigned_drones = 0
+        self.cluster_assignment_counts = {}
 
     def _build_cost_matrix(
             self,
@@ -59,6 +62,68 @@ class ClusterFrontierAssigner(FrontierAssigner):
         
         return cost_matrix
 
+    def _assign_frontier_cell_in_cluster(
+            self,
+            drone,
+            cluster,
+            cluster_assignment_count,
+            robot_map,
+    ):
+        """
+        Assigns a specific frontier cell within a cluster to a drone.
+        Distributes drones across different frontier cells in the cluster.
+        """
+        if not cluster.cells:
+            return None, None, float("inf")
+        
+        # Select a frontier cell based on assignment count to distribute drones
+        cell_index = cluster_assignment_count % len(cluster.cells)
+        target_cell = cluster.cells[cell_index]
+        
+        # Calculate path to this specific frontier cell
+        path = self.bfs_planner.find_path(
+            start=(drone.x, drone.y),
+            goal=target_cell,
+            robot_map=robot_map,
+        )
+        
+        cost = len(path) if path else float("inf")
+        
+        return target_cell, path, cost
+
+    def get_metrics(self):
+        """
+        Returns the current assignment metrics.
+        """
+        return {
+            "num_clusters": self.num_clusters,
+            "num_assigned_drones": self.num_assigned_drones,
+        }
+    def _cluster_utility(
+            self,
+            drone,
+            cluster,
+            cost_matrix,
+    ):
+
+        entry = cost_matrix[drone.id][cluster.id]
+
+        cost = entry["cost"]
+        ig = entry["ig"]
+
+        if cost == float("inf"):
+            return float("-inf")
+
+        load = self.cluster_assignment_counts[cluster.id]
+
+        return (
+                ig
+                /
+                (cost + 1)
+                /
+                (1 + load)
+        )
+
     def assign(
             self,
             drones,
@@ -86,6 +151,11 @@ class ClusterFrontierAssigner(FrontierAssigner):
             frontiers,
             robot_map,
         )
+        
+        self.num_clusters = len(clusters)
+        
+        # Reset cluster assignment counts
+        self.cluster_assignment_counts = {cluster.id: 0 for cluster in clusters}
 
         cost_matrix = self._build_cost_matrix(
             drones,
@@ -94,56 +164,125 @@ class ClusterFrontierAssigner(FrontierAssigner):
         )
 
         assignments = {}
+        assigned_count = 0
 
-        available_clusters = clusters.copy()
+        # If we have enough clusters for each drone, use original logic
+        if len(clusters) >= len(drones):
+            available_clusters = clusters.copy()
+            
+            for drone in drones:
+                if not available_clusters:
+                    assignments[drone.id] = {
+                        "target": None,
+                        "cluster": None,
+                        "path": None,
+                        "path_index": 0,
+                        "cost": float("inf"),
+                        "information_gain": None,
+                    }
+                    continue
 
-        for drone in drones:
+                valid_clusters = [
+                    cluster
+                    for cluster in available_clusters
+                    if cost_matrix[drone.id][cluster.id]["path"] is not None
+                ]
 
-            if not available_clusters:
+                if not valid_clusters:
+                    assignments[drone.id] = {
+                        "target": None,
+                        "cluster": None,
+                        "path": None,
+                        "path_index": 0,
+                        "cost": float("inf"),
+                        "information_gain": None,
+                    }
+                    continue
+
+                best_cluster = max(
+                    valid_clusters,
+                    key=lambda cluster:
+                    self._cluster_utility(
+                        drone,
+                        cluster,
+                        cost_matrix,
+                    )
+                )
+
                 assignments[drone.id] = {
-                    "target": None,
-                    "cluster": None,
-                    "path": None,
+                    "target": best_cluster.centroid,
+                    "cluster": best_cluster,
+                    "path": cost_matrix[drone.id][best_cluster.id]["path"],
                     "path_index": 0,
-                    "cost": float("inf"),
-                    "information_gain": None,
+                    "cost": cost_matrix[drone.id][best_cluster.id]["cost"],
+                    "information_gain": best_cluster.information_gain,
                 }
-                continue
 
-            valid_clusters = [
-                cluster
-                for cluster in available_clusters
-                if cost_matrix[drone.id][cluster.id]["path"] is not None
-            ]
+                available_clusters.remove(best_cluster)
+                assigned_count += 1
+        else:
+            # Not enough clusters, assign multiple drones to same cluster
+            for drone in drones:
+                valid_clusters = [
+                    cluster
+                    for cluster in clusters
+                    if cost_matrix[drone.id][cluster.id]["path"] is not None
+                ]
 
-            if not valid_clusters:
+                if not valid_clusters:
+                    assignments[drone.id] = {
+                        "target": None,
+                        "cluster": None,
+                        "path": None,
+                        "path_index": 0,
+                        "cost": float("inf"),
+                        "information_gain": None,
+                    }
+                    continue
+
+                # Select best cluster based on cost
+                best_cluster = max(
+                    valid_clusters,
+                    key=lambda cluster:
+                    self._cluster_utility(
+                        drone,
+                        cluster,
+                        cost_matrix,
+                    )
+                )
+
+                # Assign a specific frontier cell within the cluster
+                cluster_assignment_count = self.cluster_assignment_counts[best_cluster.id]
+                target_cell, path, cost = self._assign_frontier_cell_in_cluster(
+                    drone,
+                    best_cluster,
+                    cluster_assignment_count,
+                    robot_map,
+                )
+
+                if target_cell is None or path is None:
+                    assignments[drone.id] = {
+                        "target": None,
+                        "cluster": None,
+                        "path": None,
+                        "path_index": 0,
+                        "cost": float("inf"),
+                        "information_gain": None,
+                    }
+                    continue
+
                 assignments[drone.id] = {
-                    "target": None,
-                    "cluster": None,
-                    "path": None,
+                    "target": target_cell,
+                    "cluster": best_cluster,
+                    "path": path,
                     "path_index": 0,
-                    "cost": float("inf"),
-                    "information_gain": None,
+                    "cost": cost,
+                    "information_gain": best_cluster.information_gain,
                 }
-                continue
 
-            best_cluster = min(
-                available_clusters,
-                key=lambda cluster:
-                cost_matrix[drone.id][cluster.id]["cost"]
-            )
+                # Increment assignment count for this cluster
+                self.cluster_assignment_counts[best_cluster.id] += 1
+                assigned_count += 1
 
-            assignments[drone.id] = {
-                "target": best_cluster.centroid,
-                "cluster": best_cluster,
-                "path": cost_matrix[drone.id][best_cluster.id]["path"],
-                "path_index": 0,
-                "cost": cost_matrix[drone.id][best_cluster.id]["cost"],
-                "information_gain": best_cluster.information_gain,
-            }
-
-            available_clusters.remove(
-                best_cluster
-            )
-
+        self.num_assigned_drones = assigned_count
         return assignments

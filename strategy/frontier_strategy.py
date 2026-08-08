@@ -116,3 +116,11 @@ class FrontierStrategy(ExplorationStrategy):
             return Action.UP
 
         return Action.STAY
+
+    def get_metrics(self):
+        """
+        Returns metrics from the frontier assigner if available.
+        """
+        if hasattr(self.frontier_assigner, 'get_metrics'):
+            return self.frontier_assigner.get_metrics()
+        return {}
