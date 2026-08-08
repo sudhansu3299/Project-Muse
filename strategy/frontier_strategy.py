@@ -1,81 +1,74 @@
-from environment.planner.bfs_planner import BFSPlanner
 from environment.utils.path_utils import PathUtils
 from strategy.exploration_strategy import ExplorationStrategy
 from models.action import Action
 
+
 class FrontierStrategy(ExplorationStrategy):
-    def __init__(self, frontier_assigner, communication_radius=10):
+
+    def __init__(self, frontier_assigner):
         super().__init__("Frontier")
 
         self.frontier_assigner = frontier_assigner
         self.assignments = {}
-        # self.paths = {}  # Cache paths for each drone
 
     def prepare_step(
             self,
             drones,
             robot_map,
     ):
-        """
-        Only assign clusters when drones need new assignments:
-        - First time (no assignments)
-        - Drone has reached its assigned centroid
-        """
-        
-        # Check if any drone needs reassignment
-        needs_reassignment = False
-        
-        for drone in drones:
-            # No assignment yet
-            if drone.id not in self.assignments:
-                needs_reassignment = True
-                break
 
-            assignment = self.assignments[drone.id]
+        # --------------------------------------------------
+        # First assignment
+        # --------------------------------------------------
 
-            if assignment is None:
-                needs_reassignment = True
-                break
+        if not self.assignments:
 
-            # target = assignment["target"]
-            #
-            # if target is None:
-            #     needs_reassignment = True
-            #     break
-            #
-            # if (drone.x, drone.y) == target:
-            #     needs_reassignment = True
-            #     break
-
-            path = assignment["path"]
-
-            if path is None:
-                needs_reassignment = True
-                break
-
-            if assignment["path_index"] >= len(path) - 1:
-                needs_reassignment = True
-                break
-
-        if needs_reassignment:
-            self.assignments = self.frontier_assigner.assign(
+            new_assignments = self.frontier_assigner.assign(
                 drones,
                 robot_map,
             )
-            
-            # # Rebuild paths for new assignments
-            # bfs_planner = BFSPlanner()
-            # self.paths = {}
-            #
-            # for drone in drones:
-            #     cluster = self.assignments.get(drone.id)
-            #     if cluster is not None:
-            #         path = bfs_planner.find_path(
-            #             start=(drone.x, drone.y),
-            #             goal=cluster.centroid,
-            #             robot_map=robot_map,
-            #         )
-            #         self.paths[drone.id] = path
+
+            self.assignments.update(
+                new_assignments
+            )
+
+        # --------------------------------------------------
+        # Reassign only drones whose current path is invalid
+        # or finished
+        # --------------------------------------------------
+
+        drones_to_reassign = []
+
+        for drone in drones:
+
+            assignment = self.assignments.get(
+                drone.id
+            )
+
+            if assignment is None:
+                continue
+
+            path = assignment["path"]
+
+            # No path -> try again
+            if path is None:
+                drones_to_reassign.append(drone)
+                continue
+
+            index = assignment["path_index"]
+
+            # Path completed -> get a new frontier
+            if index >= len(path) - 1:
+                drones_to_reassign.append(drone)
+
+        # Batch reassign all drones that need new paths
+        if drones_to_reassign:
+            new_assignments = self.frontier_assigner.assign(
+                drones_to_reassign,
+                robot_map,
+            )
+
+            self.assignments.update(new_assignments)
 
     def choose_action(
             self,
@@ -85,16 +78,15 @@ class FrontierStrategy(ExplorationStrategy):
             nearby_agents,
     ):
 
-        assignment = self.assignments.get(
-            drone.id
-        )
+
+        assignment = self.assignments.get(drone.id)
 
         if assignment is None:
             return Action.STAY
 
         path = assignment["path"]
 
-        if path is None:
+        if path is None or len(path) < 2:
             return Action.STAY
 
         index = assignment["path_index"]
@@ -102,18 +94,25 @@ class FrontierStrategy(ExplorationStrategy):
         if index >= len(path) - 1:
             return Action.STAY
 
-        if (
-                index < len(path) - 1
-                and
-                (drone.x, drone.y) == path[index + 1]
-        ):
-            assignment["path_index"] += 1
-            index += 1
+        next_cell = path[index + 1]
 
-        path_utils = PathUtils()
+        dx = next_cell[0] - drone.x
+        dy = next_cell[1] - drone.y
 
-        return path_utils.path_to_action(
-            drone,
-            path,
-            index,
-        )
+        if dx == 1:
+            self.assignments[drone.id]["path_index"] += 1
+            return Action.RIGHT
+
+        if dx == -1:
+            self.assignments[drone.id]["path_index"] += 1
+            return Action.LEFT
+
+        if dy == 1:
+            self.assignments[drone.id]["path_index"] += 1
+            return Action.DOWN
+
+        if dy == -1:
+            self.assignments[drone.id]["path_index"] += 1
+            return Action.UP
+
+        return Action.STAY

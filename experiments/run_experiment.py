@@ -13,11 +13,7 @@ NUM_DRONES = 5
 OBSTACLE_PERCENTAGE = 0.10
 COMMUNICATION_RADIUS = 10
 
-'''
-started with this number, because started with 10k and coverage was ~70%
-also, 90% coverage was within 13k-20k steps, 15k was a good variance number
-'''
-MAX_STEPS = 15000
+MAX_STEPS = 10000
 TARGET_COVERAGE = 90.0
 
 
@@ -90,8 +86,8 @@ def run_experiment(
         )
 
         # Stop if target coverage reached
-        # if coverage >= TARGET_COVERAGE:
-        #     break
+        if coverage >= TARGET_COVERAGE:
+            break
 
     # ---------------- Save Results ----------------
 

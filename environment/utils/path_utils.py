@@ -3,8 +3,8 @@ from models.action import Action
 
 class PathUtils:
 
+    @staticmethod
     def path_to_action(
-            self,
             drone,
             path,
             path_index,
@@ -13,18 +13,30 @@ class PathUtils:
         if path is None:
             return Action.STAY
 
-        if path_index >= len(path) - 1:
+        if path_index >= len(path):
             return Action.STAY
 
-        # -------- Safety check --------
-        if path[path_index] != (drone.x, drone.y):
+        current_position = (
+            drone.x,
+            drone.y,
+        )
+
+        # We want the next waypoint after the drone's
+        # current position.
+        next_index = path_index
+
+        # If the current waypoint is already where the drone is,
+        # move toward the following waypoint.
+        if path[path_index] == current_position:
+            next_index += 1
+
+        if next_index >= len(path):
             return Action.STAY
 
-        current_x, current_y = path[path_index]
-        next_x, next_y = path[path_index + 1]
+        next_x, next_y = path[next_index]
 
-        dx = next_x - current_x
-        dy = next_y - current_y
+        dx = next_x - drone.x
+        dy = next_y - drone.y
 
         if dx == 1:
             return Action.RIGHT

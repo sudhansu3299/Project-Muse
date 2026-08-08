@@ -71,7 +71,14 @@ class ClusterFrontierAssigner(FrontierAssigner):
 
         if not frontiers:
             return {
-                drone.id: None
+                drone.id: {
+                    "target": None,
+                    "cluster": None,
+                    "path": None,
+                    "path_index": 0,
+                    "cost": float("inf"),
+                    "information_gain": None,
+                }
                 for drone in drones
             }
 
@@ -93,7 +100,14 @@ class ClusterFrontierAssigner(FrontierAssigner):
         for drone in drones:
 
             if not available_clusters:
-                assignments[drone.id] = None
+                assignments[drone.id] = {
+                    "target": None,
+                    "cluster": None,
+                    "path": None,
+                    "path_index": 0,
+                    "cost": float("inf"),
+                    "information_gain": None,
+                }
                 continue
 
             valid_clusters = [
@@ -103,7 +117,14 @@ class ClusterFrontierAssigner(FrontierAssigner):
             ]
 
             if not valid_clusters:
-                assignments[drone.id] = None
+                assignments[drone.id] = {
+                    "target": None,
+                    "cluster": None,
+                    "path": None,
+                    "path_index": 0,
+                    "cost": float("inf"),
+                    "information_gain": None,
+                }
                 continue
 
             best_cluster = min(
@@ -113,9 +134,12 @@ class ClusterFrontierAssigner(FrontierAssigner):
             )
 
             assignments[drone.id] = {
+                "target": best_cluster.centroid,
                 "cluster": best_cluster,
                 "path": cost_matrix[drone.id][best_cluster.id]["path"],
                 "path_index": 0,
+                "cost": cost_matrix[drone.id][best_cluster.id]["cost"],
+                "information_gain": best_cluster.information_gain,
             }
 
             available_clusters.remove(

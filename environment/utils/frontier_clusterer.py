@@ -65,15 +65,15 @@ class FrontierClusterer:
             frontiers
         )
 
-        print(f"Frontiers: {len(frontiers)}")
-        print(f"Clusters: {len(clusters)}")
-
-        for cluster in clusters:
-            print(
-                f"id={cluster.id}, "
-                f"size={cluster.size}, "
-                f"centroid={cluster.centroid}"
-            )
+        # print(f"Frontiers: {len(frontiers)}")
+        # print(f"Clusters: {len(clusters)}")
+        #
+        # for cluster in clusters:
+        #     print(
+        #         f"id={cluster.id}, "
+        #         f"size={cluster.size}, "
+        #         f"centroid={cluster.centroid}"
+        #     )
 
         for cluster in clusters:
 
