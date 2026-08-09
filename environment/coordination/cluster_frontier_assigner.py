@@ -1,4 +1,4 @@
-import math
+from models.constants import Cell
 from environment.coordination.frontier_assigner import FrontierAssigner
 from environment.utils.frontier_clusterer import FrontierClusterer
 
@@ -12,6 +12,7 @@ class ClusterFrontierAssigner(FrontierAssigner):
         self.num_clusters = 0
         self.num_assigned_drones = 0
         self.cluster_assignment_counts = {}
+        self.cluster_assigned_cells = {}
 
     def _build_cost_matrix(
             self,
@@ -66,30 +67,69 @@ class ClusterFrontierAssigner(FrontierAssigner):
             self,
             drone,
             cluster,
-            cluster_assignment_count,
             robot_map,
     ):
-        """
-        Assigns a specific frontier cell within a cluster to a drone.
-        Distributes drones across different frontier cells in the cluster.
-        """
+
         if not cluster.cells:
             return None, None, float("inf")
-        
-        # Select a frontier cell based on assignment count to distribute drones
-        cell_index = cluster_assignment_count % len(cluster.cells)
-        target_cell = cluster.cells[cell_index]
-        
-        # Calculate path to this specific frontier cell
-        path = self.bfs_planner.find_path(
-            start=(drone.x, drone.y),
-            goal=target_cell,
-            robot_map=robot_map,
-        )
-        
-        cost = len(path) if path else float("inf")
-        
-        return target_cell, path, cost
+
+        best_cell = None
+        best_path = None
+        best_score = float("-inf")
+        best_cost = float("inf")
+
+        for cell in cluster.cells:
+
+            if cell in self.cluster_assigned_cells[cluster.id]:
+                continue
+
+            # self.cluster_assigned_cells[cluster.id].add(best_cell)
+
+            path = self.bfs_planner.find_path(
+                start=(drone.x, drone.y),
+                goal=cell,
+                robot_map=robot_map,
+            )
+
+            if path is None:
+                continue
+
+            cost = len(path)
+
+            # Count unique unexplored cells around this frontier cell
+            unexplored = 0
+
+            for dx, dy in [
+                (0, 1),
+                (0, -1),
+                (1, 0),
+                (-1, 0),
+            ]:
+
+                nx = cell[0] + dx
+                ny = cell[1] + dy
+
+                if not robot_map.is_inside(nx, ny):
+                    continue
+
+                if robot_map.get_cell(nx, ny) == Cell.UNEXPLORED:
+                    unexplored += 1
+
+            # Information gain per unit travel
+            score = unexplored / (cost + 1)
+
+            if score > best_score:
+                best_score = score
+                best_cell = cell
+                best_path = path
+                best_cost = cost
+
+        if best_cell is not None:
+            self.cluster_assigned_cells[
+                cluster.id
+            ].add(best_cell)
+
+        return best_cell, best_path, best_cost
 
     def get_metrics(self):
         """
@@ -151,6 +191,11 @@ class ClusterFrontierAssigner(FrontierAssigner):
             frontiers,
             robot_map,
         )
+
+        self.cluster_assigned_cells = {
+            cluster.id: set()
+            for cluster in clusters
+        }
         
         self.num_clusters = len(clusters)
         
@@ -240,7 +285,8 @@ class ClusterFrontierAssigner(FrontierAssigner):
                     }
                     continue
 
-                # Select best cluster based on cost
+                # Select best cluster based on information gain,
+                # path cost, and current cluster load
                 best_cluster = max(
                     valid_clusters,
                     key=lambda cluster:
@@ -252,11 +298,9 @@ class ClusterFrontierAssigner(FrontierAssigner):
                 )
 
                 # Assign a specific frontier cell within the cluster
-                cluster_assignment_count = self.cluster_assignment_counts[best_cluster.id]
                 target_cell, path, cost = self._assign_frontier_cell_in_cluster(
                     drone,
                     best_cluster,
-                    cluster_assignment_count,
                     robot_map,
                 )
 

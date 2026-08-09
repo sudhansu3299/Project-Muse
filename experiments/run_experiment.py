@@ -10,7 +10,7 @@ GRID_WIDTH = 100
 GRID_HEIGHT = 100
 
 NUM_DRONES = 5
-OBSTACLE_PERCENTAGE = 0.10
+OBSTACLE_PERCENTAGE = 0.80
 COMMUNICATION_RADIUS = 10
 
 MAX_STEPS = 10000
@@ -73,8 +73,12 @@ def run_experiment(
             simulator.get_total_distance()
         )
 
-        overlap_percentage = (
-            simulator.get_overlap_percentage()
+        sensing_redundancy = (
+            simulator.get_sensing_redundancy()
+        )
+
+        visit_overlap = (
+            simulator.get_visit_overlap_percentage()
         )
 
         # Get cluster and active drone metrics
@@ -86,14 +90,27 @@ def run_experiment(
             num_clusters = metrics.get('num_clusters', 0)
             num_active_drones = metrics.get('num_assigned_drones', 0)
 
+        # Get exploration efficiency
+        exploration_efficiency = simulator.get_exploration_efficiency()
+
+        # Get mean pairwise distance
+        mean_pairwise_distance = simulator.get_mean_pairwise_distance()
+
+        # Get movement efficiency
+        movement_efficiency = simulator.get_movement_efficiency()
+
         # Record this timestep
         metrics_collector.record(
             timestep=simulator.timestep,
             coverage=coverage,
             total_distance=total_distance,
-            overlap_percentage=overlap_percentage,
+            sensing_redundancy=sensing_redundancy,
+            visit_overlap=visit_overlap,
             num_clusters=num_clusters,
-            num_active_drones=num_active_drones
+            num_active_drones=num_active_drones,
+            exploration_efficiency=exploration_efficiency,
+            mean_pairwise_distance=mean_pairwise_distance,
+            movement_efficiency=movement_efficiency
         )
 
         # Stop if target coverage reached
