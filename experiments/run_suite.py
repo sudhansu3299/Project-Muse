@@ -7,6 +7,7 @@ from strategy.frontier_strategy import FrontierStrategy
 from environment.coordination.nearest_frontier_assigner import NearestFrontierAssigner
 from environment.coordination.greedy_frontier_assigner import GreedyFrontierAssigner
 from environment.coordination.cluster_frontier_assigner import ClusterFrontierAssigner
+from environment.coordination.cluster_frontier_utility_assigner  import ClusterFrontierUtilityAssigner
 
 
 NUM_RUNS = 5
@@ -18,12 +19,16 @@ strategies = {
     #     NearestFrontierAssigner()
     # ),
     #
-    "greedy_frontier": lambda: FrontierStrategy(
-        GreedyFrontierAssigner()
-    ),
-
+    # "greedy_frontier": lambda: FrontierStrategy(
+    #     GreedyFrontierAssigner()
+    # ),
+    #
     "cluster_frontier": lambda: FrontierStrategy(
         ClusterFrontierAssigner()
+    ),
+
+    "cluster_utility_frontier": lambda: FrontierStrategy(
+        ClusterFrontierUtilityAssigner()
     ),
 }
 

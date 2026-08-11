@@ -1,13 +1,6 @@
-from frontier_assigner import FrontierAssigner
-
-class HungarianFrontierAssigner(
-    FrontierAssigner
-):
-
-    def assign(
-            self,
-            drones,
-            frontiers,
-            robot_map,
-    ):
-        ...
+# from environment.coordination.cluster_frontier_utility_assigner import ClusterFrontierUtilityAssigner
+#
+# class HungarianFrontierAssigner(
+#     ClusterFrontierUtilityAssigner
+# ):
+#

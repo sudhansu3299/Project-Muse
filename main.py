@@ -12,6 +12,7 @@ from environment.coordination.greedy_frontier_assigner import GreedyFrontierAssi
 
 from environment.planner.frontier_detector import FrontierDetector
 from environment.utils.frontier_clusterer import FrontierClusterer
+from environment.coordination.cluster_frontier_utility_assigner  import ClusterFrontierUtilityAssigner
 
 
 from metrics.metrics_collector import MetricsCollector
@@ -218,7 +219,7 @@ pause_button = pygame.Rect(
 )
 
 metrics_collector = MetricsCollector(
-    strategy_name="cluster_frontier",
+    strategy_name="cluster_utility_frontier",
     run_id=1,
     map_seed=MAP_SEED,
 )
