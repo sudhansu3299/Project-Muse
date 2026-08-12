@@ -1,3 +1,4 @@
+from environment.coordination.hungarian_frontier_assigner import HungarianFrontierAssigner
 from experiments.run_experiment import run_experiment
 from strategy.random_strategy import RandomStrategy
 from strategy.frontier_strategy import FrontierStrategy
@@ -29,6 +30,10 @@ strategies = {
 
     "cluster_utility_frontier": lambda: FrontierStrategy(
         ClusterFrontierUtilityAssigner()
+    ),
+
+    "hungarian_frontier": lambda: FrontierStrategy(
+        HungarianFrontierAssigner()
     ),
 }
 

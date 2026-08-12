@@ -1,6 +1,7 @@
 import pygame
 
 from environment.coordination.cluster_frontier_assigner import ClusterFrontierAssigner
+from environment.coordination.hungarian_frontier_assigner import HungarianFrontierAssigner
 from environment.simulator import Simulator
 from models.constants import Cell, Color, FontSize
 
@@ -159,7 +160,7 @@ def draw_clusters(
 #     map_seed=MAP_SEED,
 # )
 
-strategy = FrontierStrategy(ClusterFrontierAssigner())
+strategy = FrontierStrategy(HungarianFrontierAssigner())
 frontier_detector = FrontierDetector()
 frontier_clusterer = FrontierClusterer()
 
