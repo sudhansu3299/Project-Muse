@@ -1,4 +1,7 @@
 from environment.coordination.hungarian_frontier_assigner import HungarianFrontierAssigner
+from environment.planner.bfs_planner import BFSPlanner
+from environment.planner.a_star_planner import AStarPlanner
+
 from experiments.run_experiment import run_experiment
 from strategy.random_strategy import RandomStrategy
 from strategy.frontier_strategy import FrontierStrategy
@@ -24,16 +27,19 @@ strategies = {
     #     GreedyFrontierAssigner()
     # ),
     #
-    "cluster_frontier": lambda: FrontierStrategy(
-        ClusterFrontierAssigner()
-    ),
+    # "cluster_frontier": lambda: FrontierStrategy(
+    #     ClusterFrontierAssigner(BFSPlanner)
+    # ),
+    #
+    # "cluster_utility_frontier": lambda: FrontierStrategy(
+    #     ClusterFrontierUtilityAssigner(BFSPlanner)
+    # ),
 
-    "cluster_utility_frontier": lambda: FrontierStrategy(
-        ClusterFrontierUtilityAssigner()
+    "hungarian_bfs_frontier": lambda: FrontierStrategy(
+        HungarianFrontierAssigner(BFSPlanner())
     ),
-
-    "hungarian_frontier": lambda: FrontierStrategy(
-        HungarianFrontierAssigner()
+    "hungarian_astar_frontier": lambda: FrontierStrategy(
+        HungarianFrontierAssigner(AStarPlanner())
     ),
 }
 

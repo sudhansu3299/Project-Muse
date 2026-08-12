@@ -7,6 +7,9 @@ from environment.utils.frontier_clusterer import FrontierClusterer
 
 class ClusterFrontierUtilityAssigner(ClusterFrontierAssigner):
 
+    def __init__(self, planner):
+        super().__init__(planner)
+
     def _cluster_utility(
             self,
             drone,

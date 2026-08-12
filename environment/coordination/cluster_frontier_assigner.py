@@ -5,14 +5,15 @@ from environment.utils.frontier_clusterer import FrontierClusterer
 
 class ClusterFrontierAssigner(FrontierAssigner):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, planner):
+        super().__init__(planner)
 
         self.frontier_clusterer = FrontierClusterer()
         self.num_clusters = 0
         self.num_assigned_drones = 0
         self.cluster_assignment_counts = {}
         self.cluster_assigned_cells = {}
+        self.planner = planner
 
     def _build_cost_matrix(
             self,
@@ -39,7 +40,7 @@ class ClusterFrontierAssigner(FrontierAssigner):
             
             # Run BFS only on nearest 3 clusters
             for _, cluster in nearest_clusters:
-                path = self.bfs_planner.find_path(
+                path = self.planner.find_path(
                     start=(drone.x, drone.y),
                     goal=cluster.centroid,
                     robot_map=robot_map,
@@ -85,7 +86,7 @@ class ClusterFrontierAssigner(FrontierAssigner):
 
             # self.cluster_assigned_cells[cluster.id].add(best_cell)
 
-            path = self.bfs_planner.find_path(
+            path = self.planner.find_path(
                 start=(drone.x, drone.y),
                 goal=cell,
                 robot_map=robot_map,

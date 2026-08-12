@@ -9,8 +9,8 @@ class HungarianFrontierAssigner(
     ClusterFrontierUtilityAssigner
 ):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, planner):
+        super().__init__(planner)
 
     def _build_cost_matrix(
             self,
@@ -37,7 +37,7 @@ class HungarianFrontierAssigner(
 
             # Run BFS only on nearest 3 clusters
             for _, cluster in cluster_distances:
-                path = self.bfs_planner.find_path(
+                path = self.planner.find_path(
                     start=(drone.x, drone.y),
                     goal=cluster.centroid,
                     robot_map=robot_map,
