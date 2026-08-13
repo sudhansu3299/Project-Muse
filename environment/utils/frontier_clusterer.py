@@ -206,6 +206,7 @@ class FrontierClusterer:
             base_gain + size_bonus,
             4,
             )
+    #IG= unexplored/total + 0.1 * S (0.1 being the hyperparameter)
 
 '''
 Detect Frontiers

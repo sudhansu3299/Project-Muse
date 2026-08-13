@@ -7,6 +7,7 @@ class ClusterFrontierAssigner(FrontierAssigner):
 
     def __init__(self, planner):
         super().__init__(planner)
+        self.total_nodes_expanded = 0
 
         self.frontier_clusterer = FrontierClusterer()
         self.num_clusters = 0
@@ -45,6 +46,7 @@ class ClusterFrontierAssigner(FrontierAssigner):
                     goal=cluster.centroid,
                     robot_map=robot_map,
                 )
+                self.total_nodes_expanded += self.planner.nodes_expanded
 
                 cost_matrix[drone.id][cluster.id] = {
                     "cluster": cluster,
@@ -91,6 +93,7 @@ class ClusterFrontierAssigner(FrontierAssigner):
                 goal=cell,
                 robot_map=robot_map,
             )
+            self.total_nodes_expanded += self.planner.nodes_expanded
 
             if path is None:
                 continue
@@ -139,6 +142,7 @@ class ClusterFrontierAssigner(FrontierAssigner):
         return {
             "num_clusters": self.num_clusters,
             "num_assigned_drones": self.num_assigned_drones,
+            "nodes_expanded": self.total_nodes_expanded,
         }
     def _cluster_utility(
             self,

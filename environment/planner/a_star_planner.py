@@ -8,7 +8,7 @@ Started with Manhattan distance as heuristic as BFS does the same
 
 class AStarPlanner:
 
-    def __int__(self):
+    def __init__(self):
         self.nodes_expanded = 0
 
     def find_path(
@@ -17,6 +17,8 @@ class AStarPlanner:
             goal,
             robot_map,
     ):
+
+        nodes_before = self.nodes_expanded
 
         if start == goal:
             return [start]
@@ -51,8 +53,6 @@ class AStarPlanner:
 
         while open_set:
 
-            self.nodes_expanded += 1
-
             _, current_g, current = heapq.heappop(
                 open_set
             )
@@ -61,8 +61,20 @@ class AStarPlanner:
             if current_g > g_score[current]:
                 continue
 
-            # Goal reached
+            self.nodes_expanded += 1
+
+        # Goal reached
             if current == goal:
+
+                nodes_this_search = (
+                        self.nodes_expanded
+                        - nodes_before
+                )
+
+                # print(
+                #     f"A*: {start} -> {goal}, "
+                #     f"nodes expanded = {nodes_this_search}"
+                # )
 
                 return self._reconstruct_path(
                     came_from,

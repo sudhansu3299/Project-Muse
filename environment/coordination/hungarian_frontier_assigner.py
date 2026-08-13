@@ -9,8 +9,10 @@ class HungarianFrontierAssigner(
     ClusterFrontierUtilityAssigner
 ):
 
-    def __init__(self, planner):
-        super().__init__(planner)
+    def __init__(self, planner, utility):
+        super().__init__(planner, utility)
+
+        self.total_nodes_expanded = 0
 
     def _build_cost_matrix(
             self,
@@ -42,6 +44,7 @@ class HungarianFrontierAssigner(
                     goal=cluster.centroid,
                     robot_map=robot_map,
                 )
+                self.total_nodes_expanded += self.planner.nodes_expanded
 
                 cost_matrix[drone.id][cluster.id] = {
                     "cluster": cluster,
@@ -73,10 +76,24 @@ class HungarianFrontierAssigner(
 
             for cluster in clusters:
 
+                entry = cost_matrix[drone.id][cluster.id]
+                ig = entry["ig"]
+                cost = entry["cost"]
+                load = self.cluster_assignment_counts[cluster.id]
+
                 utility = self._cluster_utility(
                     drone,
                     cluster,
                     cost_matrix,
+                )
+
+                print(
+                    f"Drone={drone.id}, "
+                    f"Cluster={cluster.id}, "
+                    f"IG={ig:.2f}, "
+                    f"Cost={cost}, "
+                    f"Load={load}, "
+                    f"Utility={utility:.2f}"
                 )
 
                 row.append(utility)

@@ -1,6 +1,10 @@
 import pygame
 
 from environment.coordination.hungarian_frontier_assigner import HungarianFrontierAssigner
+from environment.coordination.cluster_frontier_utility_assigner import ClusterFrontierUtilityAssigner
+
+from environment.utils.frontier_utility import FrontierUtility
+
 from environment.simulator import Simulator
 from models.constants import Cell, Color, FontSize
 
@@ -12,6 +16,8 @@ from environment.utils.frontier_detector import FrontierDetector
 from environment.utils.frontier_clusterer import FrontierClusterer
 
 from environment.planner.a_star_planner import AStarPlanner
+from environment.planner.bfs_planner import BFSPlanner
+
 
 from metrics.metrics_collector import MetricsCollector
 
@@ -157,7 +163,13 @@ def draw_clusters(
 #     map_seed=MAP_SEED,
 # )
 
-strategy = FrontierStrategy(HungarianFrontierAssigner(planner= AStarPlanner()))
+utility = FrontierUtility(gamma=1.0)
+assigner = HungarianFrontierAssigner(
+    planner=BFSPlanner(),
+    utility=utility,
+)
+
+strategy = FrontierStrategy(assigner)
 frontier_detector = FrontierDetector()
 frontier_clusterer = FrontierClusterer()
 
@@ -262,11 +274,13 @@ while running:
         # Get cluster and active drone metrics
         num_clusters = 0
         num_active_drones = 0
+        nodes_expanded = 0
 
         if hasattr(simulator.strategy, 'get_metrics'):
             metrics = simulator.strategy.get_metrics()
             num_clusters = metrics.get('num_clusters', 0)
             num_active_drones = metrics.get('num_assigned_drones', 0)
+            nodes_expanded = metrics.get('nodes_expanded', 0)
 
         # Get exploration efficiency
         exploration_efficiency = simulator.get_exploration_efficiency()
@@ -285,6 +299,7 @@ while running:
             exploration_efficiency=exploration_efficiency,
             mean_pairwise_distance=mean_pairwise_distance,
             movement_efficiency=movement_efficiency,
+            nodes_expanded=nodes_expanded,
         )
 
         if (

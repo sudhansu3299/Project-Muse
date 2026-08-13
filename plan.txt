@@ -1,0 +1,4 @@
+1. Define Base strategy and other strategies in the strategy directory
+2. Define a generic experiment framework which can take in strategies, drone numbers, obstacles etc.
+3. Plot the results from various strategies using metrics
+4. Later vary collisions, communication amongst drones

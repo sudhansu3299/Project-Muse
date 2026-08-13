@@ -1,4 +1,3 @@
-#U=α⋅Information Gain−β⋅Path Cost−γ⋅Redundancy [+δ⋅Cluster Size] (opt.)
 from environment.coordination.cluster_frontier_assigner import ClusterFrontierAssigner
 from models.constants import Cell
 from environment.coordination.frontier_assigner import FrontierAssigner
@@ -7,8 +6,14 @@ from environment.utils.frontier_clusterer import FrontierClusterer
 
 class ClusterFrontierUtilityAssigner(ClusterFrontierAssigner):
 
-    def __init__(self, planner):
+    def __init__(
+            self,
+            planner,
+            utility,
+    ):
         super().__init__(planner)
+
+        self.utility = utility
 
     def _cluster_utility(
             self,
@@ -33,13 +38,8 @@ class ClusterFrontierUtilityAssigner(ClusterFrontierAssigner):
             cluster.id
         ]
 
-        # TODO: normalize these later
-        alpha = 1.0
-        beta = 0.5
-        gamma = 0.5
-
-        return (
-                alpha * ig
-                - beta * cost
-                - gamma * load
+        return self.utility.calculate(
+            information_gain=ig,
+            path_cost=cost,
+            cluster_load=load,
         )

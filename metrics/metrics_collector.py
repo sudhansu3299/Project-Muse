@@ -28,7 +28,8 @@ class MetricsCollector:
             num_active_drones=0,
             exploration_efficiency=0.0,
             mean_pairwise_distance=0.0,
-            movement_efficiency=0.0
+            movement_efficiency=0.0,
+            nodes_expanded=0
     ):
 
         """
@@ -48,7 +49,8 @@ class MetricsCollector:
             "num_active_drones": num_active_drones,
             "exploration_efficiency": exploration_efficiency,
             "mean_pairwise_distance": mean_pairwise_distance,
-            "movement_efficiency": movement_efficiency
+            "movement_efficiency": movement_efficiency,
+            "nodes_expanded": nodes_expanded
         })
 
     def save_csv(self):
