@@ -149,6 +149,8 @@ class ClusterFrontierAssigner(FrontierAssigner):
             drone,
             cluster,
             cost_matrix,
+            drones,
+            robot_map,
     ):
 
         entry = cost_matrix[drone.id][cluster.id]
@@ -256,6 +258,8 @@ class ClusterFrontierAssigner(FrontierAssigner):
                         drone,
                         cluster,
                         cost_matrix,
+                        drones,
+                        robot_map
                     )
                 )
 
@@ -299,6 +303,8 @@ class ClusterFrontierAssigner(FrontierAssigner):
                         drone,
                         cluster,
                         cost_matrix,
+                        drones,
+                        robot_map,
                     )
                 )
 

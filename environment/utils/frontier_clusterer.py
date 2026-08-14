@@ -169,9 +169,8 @@ class FrontierClusterer:
             robot_map,
     ):
 
-        unexplored = 0
-
-        total = 0
+        unexplored_cells = set()
+        total_cells = set()
 
         for x, y in cluster.cells:
 
@@ -190,23 +189,31 @@ class FrontierClusterer:
                 if not robot_map.is_inside(nx, ny):
                     continue
 
-                total += 1
+                cell = (nx, ny)
+
+                total_cells.add(cell)
 
                 if (
                         robot_map.get_cell(nx, ny)
                         == Cell.UNEXPLORED
                 ):
-                    unexplored += 1
+                    unexplored_cells.add(cell)
 
-        base_gain = unexplored / max(total, 1)
+        base_gain = len(unexplored_cells) / max(len(total_cells), 1)
+        #This is because we shouldn't double count the unexplored cells!
+        #Asks how many unique neigbouring cells around this cluster are unexplored?
 
-        size_bonus = 0.1 * cluster.size
+        # size_bonus = 0.1 * cluster.size
 
         return round(
-            base_gain + size_bonus,
+            base_gain,
             4,
             )
     #IG= unexplored/total + 0.1 * S (0.1 being the hyperparameter)
+    '''
+    Now, IG=U/T+λS and then multiplying with α, would still give αλS
+    Thus separated the λS from IG to make a separate parameter to make this δS
+    '''
 
 '''
 Detect Frontiers

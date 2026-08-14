@@ -163,7 +163,7 @@ def draw_clusters(
 #     map_seed=MAP_SEED,
 # )
 
-utility = FrontierUtility(gamma=1.0)
+utility = FrontierUtility(delta=1.0)
 assigner = HungarianFrontierAssigner(
     planner=BFSPlanner(),
     utility=utility,

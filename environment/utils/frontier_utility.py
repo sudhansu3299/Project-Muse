@@ -10,44 +10,50 @@ class FrontierUtility:
             alpha=1.0,
             beta=0.5,
             gamma=0.5,
+            delta=0.1,
     ):
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
+        self.delta = delta
 
     def set_weights(
             self,
             alpha,
             beta,
             gamma,
+            delta,
     ):
         self.alpha = alpha
         self.beta = beta
         self.gamma = gamma
+        self.delta = delta
 
     def calculate(
             self,
-            information_gain,
+            base_information_gain,
             path_cost,
-            cluster_load,
+            redundancy,
+            cluster_size,
     ):
 
         if path_cost == float("inf"):
             return float("-inf")
 
         utility = (
-                self.alpha * information_gain
+                self.alpha * base_information_gain
                 - self.beta * path_cost
-                - self.gamma * cluster_load
+                - self.gamma * redundancy
+                + self.delta * cluster_size
         )
 
         print(
             f"alpha={self.alpha}, "
             f"beta={self.beta}, "
             f"gamma={self.gamma}, "
-            f"IG={information_gain:.2f}, "
+            f"IG={base_information_gain:.2f}, "
             f"cost={path_cost}, "
-            f"load={cluster_load}, "
+            f"load={redundancy}, "
             f"utility={utility:.2f}"
         )
 

@@ -60,6 +60,7 @@ class HungarianFrontierAssigner(
             drones,
             clusters,
             cost_matrix,
+            robot_map
     ):
         """
         Build a drone x cluster utility matrix.
@@ -85,6 +86,8 @@ class HungarianFrontierAssigner(
                     drone,
                     cluster,
                     cost_matrix,
+                    drones,
+                    robot_map,
                 )
 
                 print(
@@ -168,6 +171,7 @@ class HungarianFrontierAssigner(
             drones,
             clusters,
             cost_matrix,
+            robot_map
         )
 
         # --------------------------------------------------
