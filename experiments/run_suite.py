@@ -51,46 +51,50 @@ strategies = {
     #     HungarianFrontierAssigner(planner=AStarPlanner(), utility=utility)
     # ),
 
-    "hungarian_default": lambda: FrontierStrategy(
+    "hungarian_a": lambda: FrontierStrategy(
+        HungarianFrontierAssigner(
+            planner=BFSPlanner(),
+            utility=FrontierUtility(
+                alpha=1.0,
+                beta=0.5,
+                gamma=0,
+                delta=0
+            ),
+        )
+    ),
+
+    "hungarian_b": lambda: FrontierStrategy(
         HungarianFrontierAssigner(
             planner=BFSPlanner(),
             utility=FrontierUtility(
                 alpha=1.0,
                 beta=0.5,
                 gamma=0.5,
+                delta=0
             ),
         )
     ),
 
-    "hungarian_high_ig": lambda: FrontierStrategy(
-        HungarianFrontierAssigner(
-            planner=BFSPlanner(),
-            utility=FrontierUtility(
-                alpha=2.0,
-                beta=0.5,
-                gamma=0.5,
-            ),
-        )
-    ),
-
-    "hungarian_high_cost": lambda: FrontierStrategy(
-        HungarianFrontierAssigner(
-            planner=BFSPlanner(),
-            utility=FrontierUtility(
-                alpha=1.0,
-                beta=1.0,
-                gamma=0.5,
-            ),
-        )
-    ),
-
-    "hungarian_high_load": lambda: FrontierStrategy(
+    "hungarian_c": lambda: FrontierStrategy(
         HungarianFrontierAssigner(
             planner=BFSPlanner(),
             utility=FrontierUtility(
                 alpha=1.0,
                 beta=0.5,
-                gamma=1.0,
+                gamma=0,
+                delta=0.1
+            ),
+        )
+    ),
+
+    "hungarian_d": lambda: FrontierStrategy(
+        HungarianFrontierAssigner(
+            planner=BFSPlanner(),
+            utility=FrontierUtility(
+                alpha=1.0,
+                beta=0.5,
+                gamma=0.5,
+                delta=0.1
             ),
         )
     ),
