@@ -10,14 +10,10 @@ GRID_WIDTH = 100
 GRID_HEIGHT = 100
 
 NUM_DRONES = 5
-OBSTACLE_PERCENTAGE = 0.10
+OBSTACLE_PERCENTAGE = 0.20
 COMMUNICATION_RADIUS = 10
 
-'''
-started with this number, because started with 10k and coverage was ~70%
-also, 90% coverage was within 13k-20k steps, 15k was a good variance number
-'''
-MAX_STEPS = 15000
+MAX_STEPS = 10000
 TARGET_COVERAGE = 90.0
 
 
@@ -77,21 +73,52 @@ def run_experiment(
             simulator.get_total_distance()
         )
 
-        overlap_percentage = (
-            simulator.get_overlap_percentage()
+        sensing_redundancy = (
+            simulator.get_sensing_redundancy()
         )
+
+        visit_overlap = (
+            simulator.get_visit_overlap_percentage()
+        )
+
+        # Get cluster and active drone metrics
+        num_clusters = 0
+        num_active_drones = 0
+        nodes_expanded = 0
+
+        if hasattr(simulator.strategy, 'get_metrics'):
+            metrics = simulator.strategy.get_metrics()
+            num_clusters = metrics.get('num_clusters', 0)
+            num_active_drones = metrics.get('num_assigned_drones', 0)
+            nodes_expanded = metrics.get('nodes_expanded', 0)
+
+        # Get exploration efficiency
+        exploration_efficiency = simulator.get_exploration_efficiency()
+
+        # Get mean pairwise distance
+        mean_pairwise_distance = simulator.get_mean_pairwise_distance()
+
+        # Get movement efficiency
+        movement_efficiency = simulator.get_movement_efficiency()
 
         # Record this timestep
         metrics_collector.record(
             timestep=simulator.timestep,
             coverage=coverage,
             total_distance=total_distance,
-            overlap_percentage=overlap_percentage
+            sensing_redundancy=sensing_redundancy,
+            visit_overlap=visit_overlap,
+            num_clusters=num_clusters,
+            num_active_drones=num_active_drones,
+            exploration_efficiency=exploration_efficiency,
+            mean_pairwise_distance=mean_pairwise_distance,
+            movement_efficiency=movement_efficiency,
+            nodes_expanded=nodes_expanded
         )
 
         # Stop if target coverage reached
-        # if coverage >= TARGET_COVERAGE:
-        #     break
+        if coverage >= TARGET_COVERAGE:
+            break
 
     # ---------------- Save Results ----------------
 

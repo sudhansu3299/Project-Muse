@@ -22,13 +22,31 @@ class NearestFrontierAssigner(FrontierAssigner):
 
         for drone in drones:
 
-            target = self.find_nearest_frontier(
+            target, path = self.find_nearest_frontier(
                 drone,
                 frontiers,
                 robot_map,
             )
 
-            assignments[drone.id] = target
+            assignments[drone.id] = {
+                "target": target,
+                "cluster": None,
+                "path": path,
+                "path_index": 0,
+                "cost": len(path) if path else float("inf"),
+                "information_gain": None,
+            }
+
+        # print("\nAssignments:")
+        #
+        # for drone in drones:
+        #     assignment = assignments[drone.id]
+        #
+        #     print(
+        #         drone.id,
+        #         assignment["target"],
+        #         assignment["cost"],
+        #     )
 
         return assignments
 
@@ -39,17 +57,18 @@ class NearestFrontierAssigner(FrontierAssigner):
             robot_map,
     ):
 
-        start = (
-            drone.x,
-            drone.y,
-        )
+        start = (drone.x, drone.y)
 
         if not frontiers:
-            return None
+            return None, None
 
         queue = deque([start])
 
         visited = {start}
+
+        came_from = {
+            start: None
+        }
 
         directions = [
             (0, 1),
@@ -64,7 +83,13 @@ class NearestFrontierAssigner(FrontierAssigner):
 
             # Found nearest frontier
             if current in frontiers:
-                return current
+
+                path = self.bfs_planner.reconstruct_path(
+                    came_from,
+                    current,
+                )
+
+                return current, path
 
             x, y = current
 
@@ -85,6 +110,9 @@ class NearestFrontierAssigner(FrontierAssigner):
                     continue
 
                 visited.add(next_cell)
+
+                came_from[next_cell] = current
+
                 queue.append(next_cell)
 
-        return None
+        return None, None

@@ -1,25 +1,45 @@
 import pygame
 
+from environment.coordination.hungarian_frontier_assigner import HungarianFrontierAssigner
+from environment.coordination.cluster_frontier_utility_assigner import ClusterFrontierUtilityAssigner
+
+from environment.utils.frontier_utility import FrontierUtility
+
 from environment.simulator import Simulator
 from models.constants import Cell, Color, FontSize
 
-from strategy.random_strategy import RandomStrategy
 from strategy.frontier_strategy import FrontierStrategy
 
-from environment.coordination.nearest_frontier_assigner import NearestFrontierAssigner
 from environment.coordination.greedy_frontier_assigner import GreedyFrontierAssigner
+
+from environment.utils.frontier_detector import FrontierDetector
+from environment.utils.frontier_clusterer import FrontierClusterer
+
+from environment.planner.a_star_planner import AStarPlanner
+from environment.planner.bfs_planner import BFSPlanner
+
 
 from metrics.metrics_collector import MetricsCollector
 
 # ---------------- Constants ----------------
+CLUSTER_COLORS = [
+    (255, 0, 0),      # Red
+    (0, 255, 0),      # Green
+    (0, 0, 255),      # Blue
+    (255, 255, 0),    # Yellow
+    (255, 0, 255),    # Magenta
+    (0, 255, 255),    # Cyan
+    (255, 165, 0),    # Orange
+    (128, 0, 255),    # Purple
+]
 
 CELL_SIZE = 8
 
-GRID_HEIGHT = 100
-GRID_WIDTH = 100
+GRID_HEIGHT = 125
+GRID_WIDTH = 125
 
 NUM_DRONES = 5
-OBSTACLE_PERCENTAGE = 0.10
+OBSTACLE_PERCENTAGE = 0.20
 COMMUNICATION_RADIUS = 10
 
 TOP_MARGIN = 100
@@ -101,27 +121,33 @@ def draw_drones(screen, drones):
             CELL_SIZE // 2,
             )
 
-def draw_frontiers(
+def draw_clusters(
         screen,
-        frontiers
+        clusters
 ):
-    for x, y in frontiers:
+    for cluster in clusters:
 
-        pygame.draw.circle(
-            screen,
-            (255, 0, 255),
-            (
-                PANEL_WIDTH
-                + PADDING
-                + x * CELL_SIZE
-                + CELL_SIZE // 2,
+        color = CLUSTER_COLORS[
+            cluster.id % len(CLUSTER_COLORS)
+            ]
 
-                TOP_MARGIN
-                + y * CELL_SIZE
-                + CELL_SIZE // 2,
-            ),
-            2
-        )
+        for x, y in cluster.cells:
+
+            pygame.draw.circle(
+                screen,
+                color,
+                (
+                    PANEL_WIDTH
+                    + PADDING
+                    + x * CELL_SIZE
+                    + CELL_SIZE // 2,
+
+                    TOP_MARGIN
+                    + y * CELL_SIZE
+                    + CELL_SIZE // 2,
+                ),
+                2,
+            )
 
 # ---------------- Simulator Initialization ----------------
 
@@ -137,7 +163,15 @@ def draw_frontiers(
 #     map_seed=MAP_SEED,
 # )
 
-strategy = FrontierStrategy(NearestFrontierAssigner())
+utility = FrontierUtility(delta=1.0)
+assigner = HungarianFrontierAssigner(
+    planner=BFSPlanner(),
+    utility=utility,
+)
+
+strategy = FrontierStrategy(assigner)
+frontier_detector = FrontierDetector()
+frontier_clusterer = FrontierClusterer()
 
 simulator = Simulator(
     grid_width=GRID_WIDTH,
@@ -195,7 +229,7 @@ pause_button = pygame.Rect(
 )
 
 metrics_collector = MetricsCollector(
-    strategy_name="frontier",
+    strategy_name="cluster_utility_frontier",
     run_id=1,
     map_seed=MAP_SEED,
 )
@@ -233,13 +267,39 @@ while running:
             simulator.get_total_distance()
         )
 
-        overlap_percentage = simulator.get_overlap_percentage()
+        sensing_redundancy = simulator.get_sensing_redundancy()
+        visit_overlap = simulator.get_visit_overlap_percentage()
+        movement_efficiency = simulator.get_movement_efficiency()
+
+        # Get cluster and active drone metrics
+        num_clusters = 0
+        num_active_drones = 0
+        nodes_expanded = 0
+
+        if hasattr(simulator.strategy, 'get_metrics'):
+            metrics = simulator.strategy.get_metrics()
+            num_clusters = metrics.get('num_clusters', 0)
+            num_active_drones = metrics.get('num_assigned_drones', 0)
+            nodes_expanded = metrics.get('nodes_expanded', 0)
+
+        # Get exploration efficiency
+        exploration_efficiency = simulator.get_exploration_efficiency()
+
+        # Get mean pairwise distance
+        mean_pairwise_distance = simulator.get_mean_pairwise_distance()
 
         metrics_collector.record(
             timestep=simulator.timestep,
             coverage=coverage,
             total_distance=total_distance,
-            overlap_percentage=overlap_percentage,
+            sensing_redundancy=sensing_redundancy,
+            visit_overlap=visit_overlap,
+            num_clusters=num_clusters,
+            num_active_drones=num_active_drones,
+            exploration_efficiency=exploration_efficiency,
+            mean_pairwise_distance=mean_pairwise_distance,
+            movement_efficiency=movement_efficiency,
+            nodes_expanded=nodes_expanded,
         )
 
         if (
@@ -308,7 +368,9 @@ while running:
     metrics_text = metrics_font.render(
         f"Step: {simulator.timestep}  |  "
         f"Coverage: {coverage:.2f}%  |  "
-        f"Overlap: {simulator.get_overlap_percentage():.2f}%  |  "
+        f"Sensing Redundancy: {simulator.get_sensing_redundancy():.2f}%  |  "
+        f"Visit Overlap: {simulator.get_visit_overlap_percentage():.2f}%  |  "
+        f"Movement Efficiency: {simulator.get_movement_efficiency():.3f}  |  "
         f"Time: {elapsed_time:.1f}s",
         True,
         (40, 90, 160)
@@ -372,13 +434,18 @@ while running:
         TOP_MARGIN
     )
 
-    frontiers = strategy.detect_frontiers(
+    frontiers = frontier_detector.detect_frontiers(
         simulator.robot_map
     )
 
-    draw_frontiers(
+    clusters = frontier_clusterer.cluster_frontiers(
+        frontiers,
+        simulator.robot_map,
+    )
+
+    draw_clusters(
         screen,
-        frontiers
+        clusters
     )
 
 

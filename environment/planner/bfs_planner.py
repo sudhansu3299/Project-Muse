@@ -2,6 +2,9 @@ from collections import deque
 from models.constants import Cell
 
 class BFSPlanner:
+    def __init__(self):
+        self.nodes_expanded = 0
+
     def find_path(
             self,
             start,
@@ -9,6 +12,7 @@ class BFSPlanner:
             robot_map
     ):
 
+        self.nodes_expanded = 0
         queue = deque([start])
 
         came_from = {
@@ -25,6 +29,7 @@ class BFSPlanner:
         while queue:
 
             current = queue.popleft()
+            self.nodes_expanded += 1
 
             if current == goal:
                 break
@@ -92,3 +97,20 @@ class BFSPlanner:
         path.reverse()
 
         return path
+
+    def path_length(
+            self,
+            drone,
+            goal,
+            robot_map,
+    ):
+        path = self.find_path(
+            start=(drone.x, drone.y),
+            goal=goal,
+            robot_map=robot_map,
+        )
+
+        if path is None:
+            return float("inf")
+
+        return len(path) - 1
