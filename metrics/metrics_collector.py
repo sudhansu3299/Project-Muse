@@ -63,11 +63,10 @@ class MetricsCollector:
             print("No records available. Skipping.")
             return
 
-        # Each run gets its own directory
+        # Each strategy gets its own directory
         output_dir = os.path.join(
             "results",
-            "raw",
-            f"run_{self.run_id:03d}"
+            self.strategy_name
         )
 
         os.makedirs(
@@ -75,10 +74,10 @@ class MetricsCollector:
             exist_ok=True
         )
 
-        # Each strategy gets its own CSV inside the run
+        # Each run gets its own CSV inside the strategy directory
         filename = os.path.join(
             output_dir,
-            f"{self.strategy_name}.csv"
+            f"run_{self.run_id:03d}.csv"
         )
 
         print(

@@ -109,32 +109,17 @@ class HungarianFrontierAssigner(
             metrics_matrix.append(row_metrics)
 
         # --------------------------------------------------
-        # Normalize metrics to [0, 1] range
+        # Use raw metrics (normalization disabled)
         # --------------------------------------------------
 
-        from environment.utils.frontier_utility import FrontierUtility
-
-        normalized_ig = FrontierUtility.normalize_min_max(all_ig)
-
-        # Handle infinite costs - normalize only finite values
-        finite_costs = [c for c in all_cost if c != float("inf")]
-        normalized_finite_costs = FrontierUtility.normalize_min_max(finite_costs) if finite_costs else []
-
-        # Map normalized values back, preserving infinity
-        normalized_cost = []
-        cost_idx = 0
-        for cost in all_cost:
-            if cost == float("inf"):
-                normalized_cost.append(float("inf"))
-            else:
-                normalized_cost.append(normalized_finite_costs[cost_idx])
-                cost_idx += 1
-
-        normalized_redundancy = FrontierUtility.normalize_min_max(all_redundancy)
-        normalized_cluster_size = FrontierUtility.normalize_min_max(all_cluster_size)
+        # Use raw values instead of normalized values
+        raw_ig = all_ig
+        raw_cost = all_cost
+        raw_redundancy = all_redundancy
+        raw_cluster_size = all_cluster_size
 
         # --------------------------------------------------
-        # Second pass: calculate utilities with normalized values
+        # Second pass: calculate utilities with raw values
         # --------------------------------------------------
 
         utility_matrix = []
@@ -146,10 +131,10 @@ class HungarianFrontierAssigner(
                 metrics = metrics_matrix[drone_idx][cluster_idx]
 
                 utility = self.utility.calculate(
-                    base_information_gain=normalized_ig[idx],
-                    path_cost=normalized_cost[idx],
-                    redundancy=normalized_redundancy[idx],
-                    cluster_size=normalized_cluster_size[idx],
+                    base_information_gain=raw_ig[idx],
+                    path_cost=raw_cost[idx],
+                    redundancy=raw_redundancy[idx],
+                    cluster_size=raw_cluster_size[idx],
                 )
 
                 # print(

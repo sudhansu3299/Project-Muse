@@ -117,6 +117,50 @@ An aggregate plot (`aggregate_coverage.png`) shows mean coverage ± standard dev
 - **Frontier (Greedy)**: Better distribution, reduced overlap
 - **Coordinated**: Best balance of speed and efficiency (when implemented)
 
+## Baseline Comparison
+
+The following table compares all exploration strategies across key performance metrics:
+
+| Method | Steps ↓ | Distance ↓ | Sensing Redundancy ↓ | Visit Overlap ↓ | Movement Efficiency ↑ |
+|--------|---------|------------|----------------------|-----------------|----------------------|
+| Random | - | - | - | - | - |
+| Nearest Frontier | - | - | - | - | - |
+| Greedy Frontier | - | - | - | - | - |
+| Cluster Frontier | - | - | - | - | - |
+| Hungarian + Utility | - | - | - | - | - |
+| PPO + Hungarian | - | - | - | - | - |
+
+*↓ indicates lower is better, ↑ indicates higher is better*
+
+### Representative Plots
+
+![Coverage vs Steps](results/baseline_comparison/coverage_vs_steps.png)
+
+*Coverage progression over simulation timesteps for all strategies*
+
+![Movement Efficiency](results/baseline_comparison/movement_efficiency.png)
+
+*Movement efficiency comparison showing how effectively each strategy explores unique cells per distance traveled*
+
+![Sensing Redundancy](results/baseline_comparison/sensing_redundancy.png)
+
+*Sensing redundancy over time - lower values indicate better coordination between drones*
+
+### Generating the Comparison
+
+To regenerate the baseline comparison table and plots:
+
+```bash
+python experiments/generate_comparison.py
+```
+
+This will:
+1. Load all experiment data from `results/{strategy}/run_XXX.csv`
+2. Calculate aggregated statistics (mean ± std) for each strategy
+3. Generate the comparison table in `results/baseline_comparison/comparison_table.md`
+4. Save detailed metrics to `results/baseline_comparison/summary.csv`
+5. Create representative plots in `results/baseline_comparison/`
+
 ## Getting Started
 
 ### Prerequisites

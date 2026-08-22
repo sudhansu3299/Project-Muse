@@ -29,25 +29,25 @@ class FrontierUtility:
         self.gamma = gamma
         self.delta = delta
 
-    @staticmethod
-    def normalize_min_max(values):
-        """
-        Normalize a list of values using min-max normalization to [0, 1].
-        Returns a list of normalized values.
-        """
-        if not values:
-            return values
-
-        min_val = min(values)
-        max_val = max(values)
-
-        if max_val == min_val:
-            return [0.0] * len(values)
-
-        return [
-            (v - min_val) / (max_val - min_val)
-            for v in values
-        ]
+    # @staticmethod
+    # def normalize_min_max(values):
+    #     """
+    #     Normalize a list of values using min-max normalization to [0, 1].
+    #     Returns a list of normalized values.
+    #     """
+    #     if not values:
+    #         return values
+    #
+    #     min_val = min(values)
+    #     max_val = max(values)
+    #
+    #     if max_val == min_val:
+    #         return [0.0] * len(values)
+    #
+    #     return [
+    #         (v - min_val) / (max_val - min_val)
+    #         for v in values
+    #     ]
 
     def calculate(
             self,
@@ -66,8 +66,8 @@ class FrontierUtility:
         utility = (
                 self.alpha * base_information_gain
                 - self.beta * path_cost
-                - self.gamma * redundancy
-                + self.delta * cluster_size
+                # - self.gamma * redundancy
+                # + self.delta * cluster_size
         )
 
         # print(
