@@ -11,6 +11,10 @@ class FrontierStrategy(ExplorationStrategy):
         self.frontier_assigner = frontier_assigner
         self.assignments = {}
 
+    def reset(self):
+
+        self.assignments = {}
+
     def prepare_step(
             self,
             drones,
