@@ -1,73 +1,169 @@
-# Project-Muse: Multi-UAV Swarm Exploration using Reinforcement Learning
+# Project-Muse: Multi-UAV Swarm Exploration
+### Learning State-Dependent Utility Weights for Multi-Robot Frontier Exploration
 
-**MUSE** is a research framework for autonomous exploration of unknown environments using a swarm of unmanned aerial vehicles (UAVs). The project combines classical frontier-based exploration with reinforcement learning (PPO) to achieve efficient, scalable, and adaptive multi-robot coordination.
+
+MUSE is a modular benchmarking framework for autonomous multi-UAV exploration of unknown environments. It combines frontier-based coordination, path-aware utility assignment, Hungarian task allocation, BFS path planning, and PPO-based learning of state-dependent utility weights.
 
 ---
 
 ## 1. Motivation
 
-Exploration of unknown, GPS-denied environments (e.g., disaster zones, caves, forests) is a critical task for search-and-rescue, surveillance, and mapping. Single-robot systems are often slow and lack robustness. Swarms of UAVs offer parallelism and redundancy, but effective coordination remains challenging due to limited communication, partial observability, and complex trade-offs between exploration and exploitation.
+Exploration of unknown, GPS-denied environments is a fundamental problem in
+robotics, with applications in search-and-rescue, disaster response,
+surveillance, and autonomous mapping. Multi-robot systems can accelerate
+exploration by distributing sensing and navigation across multiple agents, but
+effective coordination requires balancing competing objectives such as
+information gain, travel cost, sensing redundancy, and the spatial structure
+of unexplored regions.
 
-Classical heuristics such as nearest-frontier and greedy selection are useful but can be myopic and may not adapt their decision criteria as the exploration state changes. Reinforcement learning (RL) provides a data-driven framework for learning policies that maximize cumulative task reward.
+Classical frontier-based exploration provides a structured and interpretable
+solution, but many coordination strategies rely on manually selected,
+fixed preferences between these competing objectives. A weighting that is
+effective early in exploration may not remain appropriate as the environment
+becomes increasingly explored.
 
-This project investigates a **hybrid approach**: classical frontier detection, clustering, utility-based assignment, and path planning are retained for interpretability and structured coordination, while RL is used at a higher level to learn the weights of the utility function.
+### Research Idea
+
+This project investigates whether **reinforcement learning can learn
+state-dependent coordination preferences rather than directly learning robot
+motion**.
+
+Instead of replacing the classical exploration pipeline with an end-to-end
+RL controller, PPO operates at a higher level and dynamically determines the
+relative importance of different frontier-selection objectives:
+
+$$
+\boxed{
+[\alpha_t,\beta_t,\gamma_t,\delta_t] = \pi_\theta(s_t)
+}
+$$
+
+The learned weights are used by a path-aware frontier utility function, while
+classical task assignment and path planning remain unchanged.
+
+This creates a hybrid architecture:
+
+**Classical baseline**
+
+`State → Fixed Weights → Frontier Utility → Hungarian → BFS`
+
+**Proposed approach**
+
+`State → PPO → Dynamic Weights → Frontier Utility → Hungarian → BFS`
+
+The central question is therefore:
+
+> **Can state-dependent learned utility weighting improve multi-robot
+> exploration efficiency and generalization compared with fixed-weight
+> frontier coordination?**
+
+The project also provides a modular benchmarking framework in which frontier
+detection, clustering, task assignment, utility functions, and path planning
+can be independently evaluated and compared.
 
 ---
 
 ## 2. Problem Formulation
 
-We consider a swarm of $N$ homogeneous UAVs operating in a partially known 2D grid world. The environment is initially unknown except for the information revealed through the UAVs' sensing.
+We consider a team of $N$ homogeneous UAVs exploring an initially unknown
+2D grid environment. At each coordination step, the system identifies
+frontier regions representing boundaries between explored and unexplored
+space and groups them into frontier clusters.
 
-Each UAV has:
+For UAV $i$ and frontier cluster $c$, the assignment utility is defined as
 
-- A position on the grid.
-- A local/global explored occupancy map maintained by the simulator.
-- A circular sensing radius.
-- Limited communication range for neighboring-agent information.
-
-The objective is to efficiently explore the environment and reach a predefined coverage target (e.g., 90%) while minimizing unnecessary movement and redundant sensing.
-
-At each decision step, frontier clusters are evaluated using:
-
-<p align="center">
-  <b>
-    U<sub>i,c</sub> =
-    α IG<sub>i,c</sub> −
-    β C<sub>i,c</sub> −
-    γ R<sub>i,c</sub> +
-    δ S<sub>c</sub>
-  </b>
-</p>
-
-<!--
 $$
-U_{i,c} = \alpha IG_{i,c} - \beta C_{i,c} - \gamma R_{i,c} + \delta S_c
+U_{i,c} = 
+\alpha\*IG_{i,c}
+-\beta\*C_{i,c}
+-\gamma\*R_{i,c}
++\delta\*S_c
 $$
--->
 
 where:
 
-- **IG<sub>i,c</sub>** = normalized information gain.
-- **C<sub>i,c</sub>** = normalized path cost.
-- **R<sub>i,c</sub>** = predicted sensing redundancy.
-- **S<sub>c</sub>** = normalized cluster size.
-- **α, β, γ, δ** = utility weights.
+- $IG_{i,c}$ is the normalized information gain associated with assigning
+  UAV $i$ to cluster $c$.
+- $C_{i,c}$ is the normalized path cost from UAV $i$ to cluster $c$.
+- $R_{i,c}$ is the predicted sensing redundancy.
+- $S_c$ is the normalized size of frontier cluster $c$.
+- $\alpha,\beta,\gamma,\delta$ determine the relative importance of these
+  objectives.
 
-The current classical system uses fixed weights. The RL extension learns these weights dynamically from the exploration state.
+The assignment is represented by binary variables
+
+$$
+x_{i,c}\in\{0,1\},
+$$
+
+where $x_{i,c}=1$ indicates that UAV $i$ is assigned to frontier cluster $c$.
+
+The coordination objective can therefore be expressed as
+
+$$
+\max_X
+\sum_i\sum_c x_{i,c}U_{i,c},
+$$
+
+subject to the task-assignment constraints.
+
+The resulting assignment problem is solved using the Hungarian algorithm.
+Once assignments are determined, BFS is used to generate grid-based paths
+for the selected UAV-frontier pairs.
+
+### Fixed-weight coordination
+
+The classical baseline uses a constant parameter vector:
+
+$$
+\mathbf{w}_{fixed}=
+[\alpha,\beta,\gamma,\delta].
+$$
+
+The same weights are used throughout an episode.
+
+### State-dependent coordination
+
+The proposed approach replaces the fixed parameter vector with a policy:
+
+$$
+\mathbf{w}_t = [\alpha_t,\beta_t,\gamma_t,\delta_t] = \pi_\theta(s_t)
+$$
+
+
+where $s_t$ represents the current exploration state and $\pi_\theta$ is
+the PPO policy.
+
+Thus, the underlying assignment and path-planning mechanisms remain the same;
+the learned component changes only the **relative priorities used to evaluate
+candidate frontier assignments**.
+
+This formulation isolates the research question of whether learning the
+utility weights provides an advantage over manually fixed coordination
+preferences.
 
 ---
 
 ## 3. Environment
 
-The simulation environment (`environment/`) is built on a custom grid-based engine that supports:
+The simulation environment (`environment/`) is a custom grid-based multi-UAV
+simulator designed to evaluate exploration and coordination strategies under
+controlled and reproducible conditions.
 
-- Random map generation with obstacles.
-- A ground-truth occupancy grid.
-- A robot occupancy grid containing currently discovered information.
+Each episode consists of a randomly generated 2D occupancy grid containing
+obstacles. The simulator maintains both the ground-truth map and the partial
+map revealed to the UAV team through sensing. UAVs incrementally discover
+unexplored regions as they navigate through the environment.
+
+The simulator supports:
+
+- Randomized obstacle-map generation.
+- Ground-truth and partially observed occupancy maps.
 - Circular sensing around each UAV.
-- Limited communication radius between UAVs.
-- Multiple UAVs exploring the same environment.
-- Multiple random seeds for statistical evaluation.
+- Multi-UAV exploration of a shared environment.
+- Configurable inter-UAV communication range.
+- Reproducible experiments through deterministic random seeds.
+- Interchangeable exploration and coordination strategies.
 
 ### Default parameters
 
@@ -82,204 +178,241 @@ The simulation environment (`environment/`) is built on a custom grid-based engi
 | Map generation | Seeded |
 
 ---
+## 4. Approach
+### 4.1 Modular Exploration Pipeline
+We compare a classical frontier-based coordination pipeline (fixed weights) with a learning enhanced pipeline where PPO adapts the utility weights online. 
 
-## 4. Frontier Detection
+<img width="1009" height="478" alt="image" src="https://github.com/user-attachments/assets/c0812ab8-0d88-4243-8783-224e3ef578d6" />
 
-Frontiers are boundaries between explored free space and unknown cells. They represent candidate regions for further exploration.
+Both the pipelines use the same shared modular codebase with same algorithm where the weight selection strategy is different.
 
-The frontier detection module identifies cells that are adjacent to unexplored regions and produces frontier candidates from the currently known robot map.
+### 4.2  Utility weights
+The weights control the relative importance of each objective:
 
-These frontier cells are subsequently grouped into clusters to reduce the number of candidate assignments and encourage spatially coherent exploration.
+| Weight | Objective | Effect when increased |
+|---|---|---|
+| **α** | Information Gain | Favors frontiers revealing more unknown space |
+| **β** | Path Cost | Favors closer / cheaper-to-reach frontiers |
+| **γ** | Redundancy | Penalizes regions likely to be redundantly sensed |
+| **δ** | Cluster Size | Favors larger frontier regions |
 
----
 
-## 5. Frontier Clustering
-
-Frontier clustering groups nearby frontier cells into spatial regions.
-
-Each cluster contains:
-
-- A set of frontier cells.
-- A centroid.
-- A cluster size.
-- An estimated information gain.
-
-Instead of having every UAV independently select an individual frontier, the coordination layer evaluates **drone-to-cluster assignments**.
-
-This is useful for multi-UAV exploration because it allows the system to reason about regions rather than isolated frontier cells.
+In the classical baseline, these weights remain fixed. In the proposed RL
+approach, PPO adapts them dynamically according to the current exploration
+state.
 
 ---
+## 5. Reinforcement Learning
 
-## 6. Information Gain
+PPO is used to learn the utility weights from the current exploration state.
 
-Information gain estimates how much unexplored information is associated with a frontier cluster.
-
-The current implementation evaluates neighboring cells around frontier cells:
+At timestep $t$:
 
 $$
-IG_c =
-\frac{
-\text{unexplored neighboring cells}
-}{
-\text{valid neighboring cells}
-}
+\mathbf{w}_t = [\alpha_t,\beta_t,\gamma_t,\delta_t] = \pi_\theta(s_t)
 $$
 
-The resulting value is normalized to a bounded range and used as one component of the utility function.
+The action is passed directly to the utility module, which constructs the
+UAV-to-frontier-cluster utility matrix. The existing Hungarian assignment and
+BFS/A* planner then execute the resulting assignments.
 
-Cluster size is maintained as a separate utility component rather than being directly added to information gain.
-
----
-
-## 7. Utility Formulation
-
-The utility function balances exploration benefit against movement and redundancy costs:
-
-<p align="center">
-  <b>
-    U<sub>i,c</sub> =
-    α.IG<sub>i,c</sub> −
-    β.C<sub>i,c</sub> −
-    γ.R<sub>i,c</sub> +
-    δ.S<sub>c</sub>
-  </b>
-</p>
-
-where:
-
-- <b>α</b> controls the importance of information gain.
-- <b>β</b> controls the penalty for path cost.
-- <b>γ</b> controls the penalty for predicted sensing redundancy.
-- <b>δ</b> controls the preference for larger frontier clusters.
-
-The metrics are normalized before being combined so that one term does not dominate the utility simply because it has a larger numerical scale.
-
-The utility implementation supports dynamic weight updates:
-
-```python
-utility.set_weights(
-    alpha=alpha,
-    beta=beta,
-    gamma=gamma,
-    delta=delta,
-)
+### Architecture
+```text
+Exploration State
+       ↓
+      PPO
+       ↓
+[α, β, γ, δ]
+       ↓
+ Utility Function
+       ↓
+ Utility Matrix
+       ↓
+   Hungarian
+       ↓
+      BFS
+       ↓
+ UAV Exploration
+       ↓
+ State + Reward
+       ↺
 ```
 
-This interface is used by the RL layer to provide state-dependent weights.
+### PPO Components
+
+| Component | Implementation |
+|---|---|
+| **Policy** | MLP policy trained with PPO |
+| **Observation** | Exploration, UAV, and frontier state features |
+| **Action** | Continuous $[\alpha,\beta,\gamma,\delta]$ |
+| **Utility** | $\alpha IG-\beta C-\gamma R+\delta S$ |
+| **Assignment** | Hungarian |
+| **Planning** | BFS / A* |
+| **Training** | Seeded map environments |
+| **Evaluation** | Unseen map seeds |
+
+### Training Objective
+
+The learned policy is evaluated against the fixed-weight baseline using:
+
+- Steps to 90% coverage
+- Total travel distance
+- Sensing redundancy
+- Success rate
+- Cumulative reward
+
+The policy is trained using cumulative exploration reward, with checkpoints
+saved at different training horizons(25k/50k/75k/100k steps), to study learning and generalization.
+
+
+### PPO Training
+During training, the PPO policy progressively changes the utility weights in
+response to the exploration state. The visualization below shows the
+evolution of $\alpha$, $\beta$, $\gamma$, and $\delta$ during an episode.
+
+<img width="1000" height="600" alt="ppo_weight_learning" src="https://github.com/user-attachments/assets/f40136e9-e432-4e7c-b6bd-c6e130d3d028" />
+
+*The above gif is a small representation till 10k, but we have trained till 100k.(more about this in experiment section)
+
+
+### PPO Learning and Adaptive Utility Weights
+
+The PPO policy learns state-dependent utility weights instead of a single fixed
+exploration strategy , dynamically changing
+the relative importance of information gain, path cost, redundancy, and
+frontier size during exploration.
+
+<table>
+  <tr>
+    <td align="center" width="45%">
+      <img src="https://github.com/user-attachments/assets/235ed236-ad39-4d38-a3d8-7b602b1e9d97" height="400"/>
+      <br>
+      <b>Dynamic Utility Weights</b>
+    </td>
+    <td align="center" width="55%">
+      <img src="https://github.com/user-attachments/assets/4033f151-df87-489b-be5f-1b7889349054" height="400"/>
+      <br>
+      <b>Weight Evolution During PPO's Inference <br>
+        in exploration of unseen maps </b>
+    </td>
+  </tr>
+</table>
+
 
 ---
 
-## 8. Assignment
+## 6. Evaluation
 
-### 8.1 Greedy assignment
+Each episode corresponds to one generated map. Seeded environments allow
+different exploration strategies to be evaluated on identical maps under
+controlled conditions.
 
-The initial cluster-based approach evaluates the utility of candidate clusters for each UAV and assigns clusters greedily.
+PPO models are trained on a designated set of maps and evaluated separately
+on **unseen random seeds**. This prevents the evaluation from simply measuring
+performance on environments encountered during training.
 
-This provides a useful classical baseline but does not optimize the total swarm assignment jointly.
+The primary evaluation objective is to reach the coverage target efficiently,
+rather than maximizing coverage alone. Performance is therefore evaluated
+using:
 
-### 8.2 Hungarian assignment
+- **Steps to 90% coverage** — lower is better.
+- **Total travel distance** — lower is better.
+- **Sensing redundancy** — lower is better.
+- **Success rate** — percentage of episodes reaching 90% coverage.
+- **Final coverage** — coverage achieved at termination.
+- **Cumulative reward** — used to evaluate the RL objective and learning
+  behavior.
 
-The Hungarian algorithm is used to construct a global drone-to-cluster assignment.
+The primary efficiency metric is **steps to 90% coverage**, while distance and
+redundancy provide complementary measures of movement efficiency and
+multi-UAV coordination.
 
-The system builds a utility matrix:
-
-$$
-U \in \mathbb{R}^{N \times M}
-$$
-
-where each element represents the utility of assigning UAV $i$ to cluster $c$.
-
-Because the Hungarian algorithm solves a minimization problem, utilities are converted into assignment costs by negating them.
-
-The resulting assignment maximizes total swarm utility while ensuring that each UAV receives at most one cluster and each cluster is assigned at most once when sufficient clusters are available.
-
----
-
-## 9. Path Planning
-
-Two grid-based path planners have been implemented.
-
-### BFS
-
-Breadth-First Search is used as a baseline shortest-path planner on the known free-space map.
-
-### A*
-
-A* uses Manhattan distance as its initial heuristic:
-
-$$
-h(n) = |x_n - x_g| + |y_n - y_g|
-$$
-
-The planner uses the same four-connected grid motion model as BFS.
-
-A* also records the number of nodes expanded during path planning, allowing computational comparisons with BFS.
-
-Preliminary experiments indicate that A* and BFS produce broadly similar exploration performance in the current environment, while their computational behavior can differ depending on the map and target.
-
-For the initial RL experiments, **BFS is retained as the default planner** to keep the focus on adaptive utility weighting.
+**All final results will be reported over multiple random seeds using mean and standard deviation.**
 
 ---
 
-## 10. Evaluation Metrics
+## 7. Experimental Setup
 
-The simulator records:
+Experiments are organized into two stages:
 
-- **Coverage:** fraction of cells discovered.
-- **Exploration time:** steps required to reach 90% coverage.
-- **Total travelled distance:** sum across UAVs.
-- **Sensing redundancy:** redundant sensing operations as a fraction of total sensing.
-- **Visit overlap:** repeated physical visits to cells by multiple UAVs.
-- **Movement efficiency:** unique visited cells per unit of total travel distance.
-- **Mean pairwise distance:** average Euclidean separation between UAV pairs.
-- **Nodes expanded:** search nodes expanded by the path planner.
+**Stage 1:** Understand which classical coordination configuration works best. <br>
+**Stage 2:** Ask whether PPO's adaptive weighting can outperform that classical reference.
 
-All final results will be reported over multiple random seeds using mean and standard deviation.
 
----
+<img width="1536" height="1024" alt="evaluation_muse" src="https://github.com/user-attachments/assets/e222d703-f76c-45da-b63d-3a4798084928" />
 
-# 11. Classical Baselines
 
-The current classical progression is:
+### Experimental Stages
+
+The evaluation is organized into four stages:
+
+**Stage 1 — Classical Evaluation**
+
+Classical coordination strategies are evaluated to identify a strong
+non-learning reference. The comparison includes random assignment, greedy
+frontier assignment, frontier clustering, Hungarian assignment with fixed
+utility weights, and BFS/A* path planning.
+
+**Stage 2 — PPO Checkpoint Evaluation**
+
+PPO policies are evaluated at multiple training checkpoints(both PPO-A and PPO-B):
 
 ```text
-Random
-   ↓
-Nearest Frontier
-   ↓
-Greedy Frontier
-   ↓
-Cluster Frontier
-   ↓
-Cluster + Utility
-   ↓
-Hungarian + Utility
-   ↓
-Hungarian + Utility + A*
+25k → 50k → 75k → 100k
 ```
 
-The comparison separates:
+**Stage 3 — Training Diversity**
 
-**Assignment**
-- Random
-- Nearest frontier
-- Greedy
-- Hungarian
+The initial PPO configuration (**PPO-A**) was trained using a smaller set of
+maps. As training progressed, later episodes repeatedly encountered previously
+seen environments.
 
-**Utility**
-- No utility
-- Fixed-weight utility
-- Normalized weighted utility
+To investigate the effect of training-map diversity, a second configuration
+(**PPO-B**) was trained using a larger set of environment seeds.
 
-**Path planning**
-- BFS
-- A*
+| Configuration | Training seeds | Purpose |
+|---|---:|---|
+| **PPO-A** | 1–50 | Initial training with limited map diversity |
+| **PPO-B** | 1–100 | Training with increased map diversity |
+
+This experiment examines whether exposing the policy to a more diverse set of
+environments improves the generalization of the learned utility weights.
+
+
+**Stage 4 — Unseen-Map Evaluation**
+
+The trained policies and selected classical configurations are evaluated on
+map seeds that were not used during training.
+
+All methods are evaluated under identical environment conditions and on the
+same set of maps to ensure a controlled comparison.
+
+The evaluation focuses on:
+
+- **Steps to 90% coverage**
+- **Total travel distance**
+- **Sensing redundancy**
+- **Cumulative reward**
+- **Success rate**
+
+This evaluation measures whether the learned weighting policy generalizes
+beyond the environments encountered during training.
 
 ---
 
-# 12. Classical Results
+### Training Checkpoints
 
-> **Status: TBD — final values will be populated after multi-seed evaluation.**
+PPO models are saved at intermediate training checkpoints:
+
+```text
+25k → 50k → 75k → 100k
+```
+
+---
+
+## 8. Results
+
+### 8.1 Classical Evaluation
 
 | Strategy | Time to 90% ↓ | Distance ↓ | Sensing Redundancy ↓ | Visit Overlap ↓ | Movement Efficiency ↑ | Nodes Expanded ↓ |
 |---|---:|---:|---:|---:|---:|---:|
@@ -602,7 +735,7 @@ If you use this framework in your research, please cite:
 ```bibtex
 @software{ProjectMuse2026,
   author = {Sudhansu, ...},
-  title = {Project-Muse: Multi-UAV Swarm Exploration using Reinforcement Learning},
+  title = {Project-Muse: Multi-UAV Swarm Exploration},
   year = {2026},
   url = {https://github.com/sudhansu3299/Project-Muse}
 }
@@ -617,5 +750,5 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ---
 
 # Contact
-
+E-Mail: sudhansu3299@gmail.com
 Project Link: [https://github.com/sudhansu3299/Project-Muse](https://github.com/sudhansu3299/Project-Muse)
