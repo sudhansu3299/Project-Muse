@@ -298,6 +298,10 @@ frontier size during exploration.
   </tr>
 </table>
 
+### Learned Utility Weights across timesteps
+
+<img width="2400" height="1500" alt="06_learned_weights" src="https://github.com/user-attachments/assets/f1eeb01e-05f7-435c-86b2-e4fc9c938cb6" />
+
 
 ---
 
@@ -408,218 +412,80 @@ PPO models are saved at intermediate training checkpoints:
 25k → 50k → 75k → 100k
 ```
 
+### PPO Training Configuration
+
+| Parameter | Value |
+|---|---:|
+| PPO implementation | Stable-Baselines3 |
+| Policy | MLP |
+| Learning rate | $3 \times 10^{-4}$ |
+| Discount factor $\gamma$ | 0.99 |
+| GAE $\lambda$ | 0.95 |
+| Clip range | 0.2 |
+| Rollout length | 2048 |
+| Batch size | 64 |
+| Training steps | 100,000 |
+
 ---
 
 ## 8. Results
 
 ### 8.1 Classical Evaluation
 
-| Strategy | Time to 90% ↓ | Distance ↓ | Sensing Redundancy ↓ | Visit Overlap ↓ | Movement Efficiency ↑ | Nodes Expanded ↓ |
-|---|---:|---:|---:|---:|---:|---:|
-| Random | TBD | TBD | TBD | TBD | TBD | TBD |
-| Nearest Frontier | TBD | TBD | TBD | TBD | TBD | TBD |
-| Greedy Frontier | TBD | TBD | TBD | TBD | TBD | TBD |
-| Cluster Frontier | TBD | TBD | TBD | TBD | TBD | TBD |
-| Cluster + Utility | TBD | TBD | TBD | TBD | TBD | TBD |
-| Hungarian + Utility | TBD | TBD | TBD | TBD | TBD | TBD |
-| Hungarian + Utility + A* | TBD | TBD | TBD | TBD | TBD | TBD |
+| Strategy | Time to 90% ↓ | Distance ↓ | Sensing Redundancy ↓ | Visit Overlap ↓ | Movement Efficiency ↑ |
+|---|---:|---:|---:|---:|---:|
+greedy frontier| 580 ± 36 | 2898 ± 179 | 89.0% ± 0.7% | 8.5% ± 2.5% |0.876 ± 0.027
+cluster frontier | 684 ± 41 |3420 ± 206 | 90.7% ± 0.6% | 8.4% ± 2.3% | 0.834 ± 0.022
+cluster + utility | 669 ± 42 | 3344 ± 210 | 90.5% ± 0.6% | 6.9% ± 2.6% | 0.847 ± 0.025
+hungarian + utility + bfs | 652 ± 40 | 3260 ± 202 | 90.3% ± 0.6% | 11.2% ± 2.0% | 0.794 ± 0.017
+hungarian + utility + A* | 674 ± 64 | 3370 ± 320 | 90.5% ± 0.8% | 11.9% ± 3.2% | 0.783 ± 0.029
+
 
 ### Coverage vs. Steps
 
-> **Plot: TBD**
+<img width="4164" height="2063" alt="t90_per_seed_classical" src="https://github.com/user-attachments/assets/933dc8d7-a904-4070-b3c1-5dd3cdda0160" />
 
-`plots/classical/coverage_comparison.png`
+<img width="3564" height="1762" alt="t90_boxplot_classical" src="https://github.com/user-attachments/assets/4880a8d5-3554-4842-ae0b-9425d67f5799" />
+
 
 ### Sensing Redundancy
 
-> **Plot: TBD**
+<img width="4164" height="2063" alt="sensing_redundancy_per_seed_classical" src="https://github.com/user-attachments/assets/5b02e970-09fb-41a1-8b84-c927f3aac629" />
 
-`plots/classical/sensing_redundancy.png`
-
-### Visit Overlap
-
-> **Plot: TBD**
-
-`plots/classical/visit_overlap.png`
 
 ### Movement Efficiency
 
-> **Plot: TBD**
+<img width="4164" height="2063" alt="movement_efficiency_per_seed_classical" src="https://github.com/user-attachments/assets/3da2d15a-4966-45b4-a352-68f825c34310" />
 
-`plots/classical/movement_efficiency.png`
+### 8.2 PPO Evaluation
 
-### BFS vs. A* Nodes Expanded
+**PPO-A:** policy trained with limited/repeated environment exposure (51 maps shown twice)
+**PPO-B:** policy trained with increased environment diversity (101 unseen maps)
 
-> **Plot: TBD**
+### T90 vs Training Timesteps
+<img width="2400" height="1500" alt="01_steps_to_90" src="https://github.com/user-attachments/assets/53839c5f-bdd5-4657-ba91-d4fed7ad4b98" />
 
-`plots/classical/bfs_vs_astar_nodes.png`
+So, we chose 2 of the best checkpoints: 50k_a and 100k_b (where 50k and 100k are the timesteps during training)
 
----
+### Coverage vs. Steps
 
-# 13. Reinforcement Learning Formulation
+<img width="3564" height="1764" alt="ppo_t90_per_seed" src="https://github.com/user-attachments/assets/ac4f0feb-0daa-4844-824d-92f65987092c" />
 
-The next stage introduces **Proximal Policy Optimization (PPO)** to learn the utility weights.
+### Sensing Redundancy
+<img width="3564" height="1764" alt="ppo_sensing_redundancy_per_seed" src="https://github.com/user-attachments/assets/e4a3f4bd-599f-4e8d-8cdb-ce93b1074b02" />
 
-Importantly, PPO does **not replace the Hungarian assignment or path planner**.
 
-The intended architecture is:
+### Movement Efficiency
+<img width="3564" height="1764" alt="ppo_movement_efficiency_per_seed" src="https://github.com/user-attachments/assets/8b99043e-5c6a-466c-beba-85422d163524" />
 
-```text
-Exploration State
-       ↓
-      PPO
-       ↓
-[α, β, γ, δ]
-       ↓
- Utility Function
-       ↓
- Utility Matrix
-       ↓
-   Hungarian
-       ↓
-      BFS
-       ↓
- UAV Exploration
-       ↓
- State + Reward
-       ↺
-```
+### 8.3 PPO vs classical baselines
 
-PPO therefore acts as a high-level adaptive weighting mechanism.
+#### TBD
 
-### State
-
-The state will contain compact features describing the current exploration situation, such as:
-
-- Current coverage.
-- Number of frontier clusters.
-- Information-gain statistics.
-- Path-cost statistics.
-- Predicted redundancy.
-- Cluster-size statistics.
-- Sensing redundancy.
-- Visit overlap.
-- UAV spatial distribution.
-
-The exact state representation is **TBD** and will be finalized during RL experiments.
-
-### Action
-
-The PPO policy outputs four continuous utility weights:
-
-<p align="center">
-  <strong>
-    a<sub>t</sub> = [α<sub>t</sub>, β<sub>t</sub>, γ<sub>t</sub>, δ<sub>t</sub>]
-  </strong>
-</p>
-
-The action is passed to:
-
-```python
-utility.set_weights(...)
-```
-
-### Reward
-
-The reward measures actual exploration performance rather than the numerical value of the handcrafted utility.
-
-An initial candidate formulation is:
-
-<p align="center">
-  <strong>
-    r<sub>t</sub> =
-    w<sub>c</sub> ΔCoverage −
-    w<sub>d</sub> ΔDistance −
-    w<sub>r</sub> ΔRedundancy
-  </strong>
-</p>
-
-The reward coefficients are **TBD** and will be documented after initial experiments.
-
-The key distinction is:
-
-> **Utility determines which assignment is selected; reward determines whether the resulting exploration behavior was good.**
 
 ---
 
-# 14. PPO Training
-
-The first implementation will use a standard PPO implementation rather than reimplementing PPO from scratch.
-
-The RL environment will expose:
-
-- A continuous four-dimensional action space for $[\alpha,\beta,\gamma,\delta]$.
-- A continuous observation space containing exploration-state features.
-- A reward based on exploration performance.
-- Episode termination when the coverage target is reached or the maximum number of steps is exceeded.
-
-The PPO policy learns:
-
-$$
-\pi_\theta(s_t)
-\rightarrow
-[\alpha_t,\beta_t,\gamma_t,\delta_t]
-$$
-
-rather than a fixed global set of weights.
-
-This allows the utility function to adapt its priorities as exploration progresses.
-
-### Training configuration
-
-| Parameter | Value |
-|---|---:|
-| PPO implementation | TBD |
-| Learning rate | TBD |
-| Discount factor | TBD |
-| GAE λ | TBD |
-| Clip range | TBD |
-| Rollout length | TBD |
-| Batch size | TBD |
-| Training steps | TBD |
-
----
-
-# 15. PPO Results
-
-> **Status: TBD — results will be populated after training.**
-
-PPO will be evaluated on map seeds that were not used during training.
-
-| Strategy | Time to 90% ↓ | Distance ↓ | Sensing Redundancy ↓ | Visit Overlap ↓ | Movement Efficiency ↑ |
-|---|---:|---:|---:|---:|---:|
-| Fixed-weight Hungarian | TBD | TBD | TBD | TBD | TBD |
-| PPO + Hungarian | TBD | TBD | TBD | TBD | TBD |
-
-### PPO Learning Curve
-
-> **Plot: TBD**
-
-`plots/rl/training_reward.png`
-
-### PPO vs. Classical Coverage
-
-> **Plot: TBD**
-
-`plots/rl/coverage_comparison.png`
-
-### Learned Utility Weights
-
-> **Plot: TBD**
-
-`plots/rl/learned_weights.png`
-
-### Generalization to Unseen Seeds
-
-> **Plot: TBD**
-
-`plots/rl/unseen_seed_evaluation.png`
-
-No performance improvement over the classical baseline will be claimed until the corresponding multi-seed evaluation has been completed.
-
----
-
-# 16. Ablation Studies
+# 9. Ablation Studies
 
 Planned ablations include:
 
@@ -663,7 +529,7 @@ The goal is to determine whether improvements come from:
 
 ---
 
-# 17. Limitations
+# 10. Limitations
 
 The current simulator has several limitations:
 
@@ -678,7 +544,7 @@ The current simulator has several limitations:
 
 ---
 
-# 18. Future Work
+# 11. Future Work
 
 Potential extensions include:
 
@@ -695,7 +561,7 @@ Potential extensions include:
 
 ---
 
-# 19. Project Status
+# 12. Project Status
 
 ### Completed
 
@@ -728,7 +594,7 @@ Potential extensions include:
 
 ---
 
-# 20. Citation
+# 13. Citation
 
 If you use this framework in your research, please cite:
 
