@@ -502,45 +502,18 @@ So, we chose 2 of the best checkpoints: 50k_a and 100k_b (where 50k and 100k are
 
 ### 8.3 PPO vs classical baselines
 
-#### TBD
+### Steps per seed
+<img width="5970" height="3597" alt="coverage_vs_steps_per_seed" src="https://github.com/user-attachments/assets/62206537-8b97-43ae-aacc-4a2036672195" />
 
+
+### Sensing Redundancy
+<img width="4164" height="2364" alt="sensing_redundancy_per_seed" src="https://github.com/user-attachments/assets/d11aa621-e911-48c9-b722-451245851a76" />
 
 ---
 
 # 9. Ablation Studies
 
 Planned ablations include:
-
-### Cluster Selection Variants
-The clustered frontier strategy contains two levels of selection: cluster
-selection and cell selection within the selected cluster.
-
-<img width="3570" height="2074" alt="variant_comparison" src="https://github.com/user-attachments/assets/f7e90d23-dc43-49c5-9da4-c8496f31c4c0" />
-
-| Variant                  | Cluster Selection | Cell Selection            |
-| ------------------------ | ----------------- | ------------------------- |
-| **A — Original**         | `IG / (cost + 1)` | `unexplored / (cost + 1)` |
-| **B — Cluster Distance** | `-cost`           | `unexplored / (cost + 1)` |
-| **C — Cell Distance** (used later*)    | `IG / (cost + 1)` | `-cost`                   |
-| **D — Distance Only**    | `-cost`           | `-cost`                   |
-
-**<u>Mean ± Standard Deviation:</u> <br>**
-Variant A: 684.00 ± 41.11 (11 runs) <br>
-Variant B: 682.45 ± 37.98 (11 runs) <br>
-Variant C: 674.82 ± 57.14 (11 runs) <br>
-Variant D: 678.18 ± 36.70 (11 runs) <br>
-
-**Regret Count Analysis for C vs D:** <br>
-
-Against Best-Performing Method (all variants): <br>
-Variant C: 6/11 seeds lost (54.5% regret) <br>
-Variant D: 7/11 seeds lost (63.6% regret) <br>
-
-Motivation:<br>
-Across 11 evaluation seeds, no fixed scoring formulation consistently
-dominated across all environments. Variant C achieved the lowest mean
-time-to-90% coverage (674.82 ± 57.14 steps), but the variance is high and won the head-to-head
-comparison against Variant D on 6 of 11 seeds. This suggests that the relative value of distance and information-based criteria is environment-dependent, motivating the use of state-dependent rather than globally fixed utility weights.
 
 ### Utility ablation
 
@@ -551,27 +524,82 @@ IG + Path Cost + Redundancy
 IG + Path Cost + Redundancy + Cluster Size
 ```
 
-### Assignment ablation
+| Utility Formulation | Cluster T90 ↓ | Cluster Redundancy ↓ | Cluster Overlap ↓ | Hungarian T90 ↓ | Hungarian Redundancy ↓ | Hungarian Overlap ↓ |
+|---|---:|---:|---:|---:|---:|---:|
+| **IG only** | 4091 ± 685 | 98.4% ± 0.3% | 64.6% ± 2.0% | 749 ± 68 | 91.5% ± 0.7% | 15.4% ± 3.5% |
+| **IG + Cost** | **682 ± 38** | **90.7% ± 0.5%** | **7.1% ± 2.0%** | 669 ± 70 | **90.4% ± 1.0%** | 11.7% ± 3.6% |
+| **IG + Cost + Redundancy** | 705 ± 67 | 91.0% ± 0.8% | 9.4% ± 5.0% | 671 ± 37 | 90.6% ± 0.5% | 11.8% ± 2.2% |
+| **IG + Cost + Redundancy + Cluster Size** | 688 ± 48 | 90.7% ± 0.6% | 8.3% ± 2.9% | **652 ± 40** | 90.3% ± 0.6% | 11.2% ± 2.0% |
 
-```text
-Greedy
-Hungarian
-```
 
-### Planner ablation
+The ablation demonstrates that different utility components contribute differently to exploration. Path cost is critical, while redundancy and cluster size have more environment and assignment dependent effects. The complete utility formulation achieves the best mean T90 for the Hungarian assignment strategy. <br>
 
-```text
-BFS
-A*
-```
+**Thus, the utility function is carved as:** 
+
+$$
+U_{i,c} = 
+\alpha\*IG_{i,c}
+-\beta\*C_{i,c}
+-\gamma\*R_{i,c}
++\delta\*S_c
+$$
+
+
+### Assignment Ablation
+
+The effect of assignment strategy is evaluated using:
+
+- **Nearest-Frontier Greedy** — each UAV is assigned the nearest reachable
+  frontier sequentially.
+- **Cluster-Based Assignment** — frontiers are grouped into clusters, and
+  each UAV selects a cluster based on the corresponding utility.
+- **Hungarian Assignment** — UAVs are assigned jointly by maximizing the
+  global utility across UAV–cluster pairs.
+
+### Planner Ablation
+
+The effect of the grid-based path-planning algorithm is evaluated using:
+
+- **BFS** — breadth-first search for shortest paths on the four-connected
+  occupancy grid.
+
+- **A\*** — heuristic search using **Manhattan distance** as the heuristic:
+
+  ```text
+  h(n) = |x_n - x_g| + |y_n - y_g|
+  ```
+
+  No Euclidean, Octile, or diagonal-distance heuristic is used. The same
+  four-connected grid motion model is used for both BFS and A\*.
 
 ### Learning ablation
 
 ```text
 Fixed weights
-Optimized fixed weights (optional)
 PPO adaptive weights
 ```
+The effect of adaptive utility weighting is evaluated by comparing a
+fixed-weight utility against PPO-based adaptive weighting.
+
+The fixed baseline uses:
+
+$$
+(\alpha,\beta,\gamma,\delta)=(1.0,0.5,0.5,0.1)
+$$
+
+The PPO policy instead predicts the utility weights dynamically from the
+current exploration state:
+
+More on the evaluation in [8.2 PPO Evaluation](#82-ppo-evaluation) and [8.3 PPO vs classical baselines](#83-ppo-vs-classical-baselines).
+
+<img width="2964" height="1764" alt="t90_comparison" src="https://github.com/user-attachments/assets/53451922-b92b-41f1-baf3-53b5dba51c09" />
+
+| Strategy | T90 ↓ | Distance ↓ | Sensing Redundancy ↓ |
+|---|---:|---:|---:|
+| **Fixed Weights** | 804.7 | 4023.6 | 92.05% | 
+| **PPO-A** | 628.4 | 3146.8 | 89.94% | 
+| **PPO-B** | **626.6** | **3138.2** | **89.88%** |
+
 
 The goal is to determine whether improvements come from:
 
@@ -586,14 +614,17 @@ The goal is to determine whether improvements come from:
 
 The current simulator has several limitations:
 
-- **Simulation gap:** the current environment is a 2D grid-based simulator and does not yet model full 3D UAV dynamics.
-- **Simplified sensing:** UAVs currently use a circular sensing radius rather than a realistic sensor model.
-- **Static environment:** obstacles are currently static.
-- **Simplified communication:** communication is represented using a fixed spatial radius.
-- **Centralised coordination:** the current Hungarian assignment is centrally computed.
-- **Reward engineering:** the RL reward is initially hand-designed and may require further investigation.
-- **Computational cost:** evaluating many drone-cluster pairs can become expensive as the number of clusters increases.
-- **Generalization:** robustness to substantially different maps and obstacle distributions remains to be evaluated.
+- **Experimental scale:** experiments are conducted using **5 UAVs** in a
+  **100 × 100 grid with 20% obstacle density**.
+- **Unexplored operating conditions:** communication constraints, larger map
+  sizes, higher obstacle densities, and larger swarm sizes have not yet been
+  evaluated.
+- **Simplified communication:** communication is represented using a fixed
+  spatial radius rather than a realistic communication model with bandwidth,
+  latency, packet loss, or interference.
+- **Reward engineering:** the RL reward is initially hand-designed and may
+  require further investigation to determine whether alternative reward
+  formulations produce more robust learning.
 
 ---
 
@@ -601,16 +632,31 @@ The current simulator has several limitations:
 
 Potential extensions include:
 
-- **Adaptive multi-agent coordination:** move toward decentralized or distributed assignment.
-- **Decentralised PPO:** learn policies that rely on local observations and limited communication.
-- **3D environment:** extend the simulator to 3D occupancy grids.
-- **Realistic UAV dynamics:** incorporate velocity, acceleration, turning constraints and energy consumption.
-- **Dynamic obstacles:** incorporate moving obstacles and online replanning.
-- **Hierarchical RL:** separate high-level exploration decisions from low-level navigation.
-- **Transfer learning:** evaluate sim-to-real transfer using domain randomization.
-- **Multi-objective optimization:** incorporate battery, safety and communication constraints.
-- **Learned path planning:** investigate whether learned planners can complement or replace classical search.
-- **Explainability:** analyze how learned utility weights change according to exploration state.
+- **Communication-aware coordination:** incorporate communication range,
+  latency, packet loss, and bandwidth constraints into multi-UAV coordination.
+
+- **Decentralised PPO:** extend the current centralized policy and assignment
+  framework toward decentralized policies based on local observations and
+  limited inter-UAV communication.
+
+- **Dynamic environments:** introduce moving obstacles and changing
+  environments, requiring continuous replanning and adaptive coordination.
+
+- **Larger-scale evaluation:** evaluate the approach with larger swarm sizes,
+  larger maps, and higher obstacle densities to study scalability and
+  robustness.
+
+- **3D UAV environments:** extend the current 2D occupancy-grid simulator to
+  3D environments with realistic UAV motion constraints.
+
+- **Sim-to-real transfer:** evaluate whether the learned coordination policy
+  can transfer to physical UAV platforms using domain randomization and
+  increasingly realistic sensing and dynamics models.
+
+- **Explainability:** analyze how the learned utility
+  weights change with exploration state and identify which environmental
+  conditions cause the policy to prioritize information gain, travel cost,
+  redundancy, or cluster size.
 
 ---
 
@@ -634,14 +680,13 @@ Potential extensions include:
 - [x] Visit-overlap metric
 - [x] Movement-efficiency metric
 - [x] Multi-run experiment framework
-
+- [x] Final classical baseline evaluation
+- [x] PPO environment
+- [x] PPO training
+- [x] Learned utility weights
+- [x] PPO evaluation on unseen maps
+      
 ### In Progress
-
-- [ ] Final classical baseline evaluation
-- [ ] PPO environment
-- [ ] PPO training
-- [ ] Learned utility weights
-- [ ] PPO evaluation on unseen maps
 - [ ] Ablation studies
 - [ ] Final plots and statistical analysis
 
