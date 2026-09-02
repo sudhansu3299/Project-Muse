@@ -357,6 +357,28 @@ non-learning reference. The comparison includes random assignment, greedy
 frontier assignment, frontier clustering, Hungarian assignment with fixed
 utility weights, and BFS/A* path planning.
 
+| Variant | Frontier / Assignment Strategy | Utility Weights | Path Planner | Purpose |
+|---|---|---|---|---|
+| **Random** | Random frontier assignment | — | BFS | Lower-bound reference |
+| **Greedy** | Nearest-frontier assignment | — | BFS | Simple distance-based baseline |
+| **Cluster Frontier** | Frontier clustering | Fixed | BFS | Evaluate spatial frontier grouping |
+| **Cluster Utility** | Frontier clustering + utility | Fixed | BFS | Evaluate information/cost-aware selection 
+| **Hungarian + BFS** | Utility-based Hungarian assignment | Fixed | BFS | Global multi-UAV coordination |
+| **Hungarian + A\*** | Utility-based Hungarian assignment | Fixed | A* | Evaluate alternative path planning |
+
+No single classical configuration consistently dominates across all maps.
+Different environments favor different exploration trade-offs:
+
+- some maps favor **shorter travel to nearby frontiers**;
+- others benefit from **prioritizing regions with greater information gain**;
+- some benefit from **avoiding redundant exploration between UAVs**.
+
+
+This motivates the central question of the proposed approach:
+
+> **Can the coordination policy learn which exploration trade-off is
+> appropriate for the current state of the environment?**
+
 **Stage 2 — PPO Checkpoint Evaluation**
 
 PPO policies are evaluated at multiple training checkpoints(both PPO-A and PPO-B):
@@ -488,6 +510,37 @@ So, we chose 2 of the best checkpoints: 50k_a and 100k_b (where 50k and 100k are
 # 9. Ablation Studies
 
 Planned ablations include:
+
+### Cluster Selection Variants
+The clustered frontier strategy contains two levels of selection: cluster
+selection and cell selection within the selected cluster.
+
+<img width="3570" height="2074" alt="variant_comparison" src="https://github.com/user-attachments/assets/f7e90d23-dc43-49c5-9da4-c8496f31c4c0" />
+
+| Variant                  | Cluster Selection | Cell Selection            |
+| ------------------------ | ----------------- | ------------------------- |
+| **A — Original**         | `IG / (cost + 1)` | `unexplored / (cost + 1)` |
+| **B — Cluster Distance** | `-cost`           | `unexplored / (cost + 1)` |
+| **C — Cell Distance** (used later*)    | `IG / (cost + 1)` | `-cost`                   |
+| **D — Distance Only**    | `-cost`           | `-cost`                   |
+
+**<u>Mean ± Standard Deviation:</u> <br>**
+Variant A: 684.00 ± 41.11 (11 runs) <br>
+Variant B: 682.45 ± 37.98 (11 runs) <br>
+Variant C: 674.82 ± 57.14 (11 runs) <br>
+Variant D: 678.18 ± 36.70 (11 runs) <br>
+
+**Regret Count Analysis for C vs D:** <br>
+
+Against Best-Performing Method (all variants): <br>
+Variant C: 6/11 seeds lost (54.5% regret) <br>
+Variant D: 7/11 seeds lost (63.6% regret) <br>
+
+Motivation:<br>
+Across 11 evaluation seeds, no fixed scoring formulation consistently
+dominated across all environments. Variant C achieved the lowest mean
+time-to-90% coverage (674.82 ± 57.14 steps), but the variance is high and won the head-to-head
+comparison against Variant D on 6 of 11 seeds. This suggests that the relative value of distance and information-based criteria is environment-dependent, motivating the use of state-dependent rather than globally fixed utility weights.
 
 ### Utility ablation
 
