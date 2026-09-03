@@ -689,10 +689,21 @@ Potential extensions include:
 ### In Progress
 - [ ] Ablation studies
 - [ ] Final plots and statistical analysis
+---
+
+# 13. References
+
+This project builds upon key classical and learning-based robotics techniques:
+
+1. Yamauchi, B. (1997). *A frontier-based approach for autonomous exploration.* IEEE.
+2. Burgard, W., et al. (2005). *Coordinated multi-robot exploration.* IEEE Transactions on Robotics.
+3. Kuhn, H. W. (1955). *The Hungarian method for the assignment problem.* Naval Research Logistics.
+4. Schulman, J., et al. (2017). *Proximal Policy Optimization Algorithms.* arXiv.
+5. Urrea, C., & Muñoz, M. (2025). Adaptive Multi-Objective Reinforcement Learning for Real-Time Robotic Applications. Processes / MDPI.
 
 ---
 
-# 13. Citation
+# 14. Citation
 
 If you use this framework in your research, please cite:
 
