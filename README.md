@@ -5,6 +5,20 @@
 MUSE is a modular benchmarking framework for autonomous multi-UAV exploration of unknown environments. It combines frontier-based coordination, path-aware utility assignment, Hungarian task allocation, BFS path planning, and PPO-based learning of state-dependent utility weights.
 
 ---
+1. [Motivation](#1-motivation)
+2. [Research Idea](#11-research-idea)
+3. [Problem Formulation](#2-problem-formulation)
+4. [Environment](#3-environment)
+5. [Approach](#4-approach)
+6. [Reinforcement Learning](#5-reinforcement-learning)
+7. [Evaluation](#6-evaluation)
+8. [Experimental Setup](#7-experimental-setup)
+9. [Results](#8-results)
+10. [Ablation Studies](#9-ablation-studies)
+11. [Limitations](#10-limitations)
+12. [Future Work](#11-future-work)
+13. [References](#13-references)
+---
 
 ## 1. Motivation
 
@@ -22,7 +36,7 @@ fixed preferences between these competing objectives. A weighting that is
 effective early in exploration may not remain appropriate as the environment
 becomes increasingly explored.
 
-### Research Idea
+### 1.1 Research Idea
 
 This project investigates whether **reinforcement learning can learn
 state-dependent coordination preferences rather than directly learning robot
