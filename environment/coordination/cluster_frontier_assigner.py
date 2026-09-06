@@ -7,11 +7,11 @@ class ClusterFrontierAssigner(FrontierAssigner):
 
     def __init__(self, planner):
         super().__init__(planner)
+        self.total_nodes_expanded = 0
 
         self.frontier_clusterer = FrontierClusterer()
         self.num_clusters = 0
         self.num_assigned_drones = 0
-        self.cluster_assignment_counts = {}
         self.cluster_assigned_cells = {}
         self.planner = planner
 
@@ -45,6 +45,7 @@ class ClusterFrontierAssigner(FrontierAssigner):
                     goal=cluster.centroid,
                     robot_map=robot_map,
                 )
+                self.total_nodes_expanded += self.planner.nodes_expanded
 
                 cost_matrix[drone.id][cluster.id] = {
                     "cluster": cluster,
@@ -91,6 +92,7 @@ class ClusterFrontierAssigner(FrontierAssigner):
                 goal=cell,
                 robot_map=robot_map,
             )
+            self.total_nodes_expanded += self.planner.nodes_expanded
 
             if path is None:
                 continue
@@ -139,12 +141,15 @@ class ClusterFrontierAssigner(FrontierAssigner):
         return {
             "num_clusters": self.num_clusters,
             "num_assigned_drones": self.num_assigned_drones,
+            "nodes_expanded": self.total_nodes_expanded,
         }
     def _cluster_utility(
             self,
             drone,
             cluster,
             cost_matrix,
+            drones,
+            robot_map,
     ):
 
         entry = cost_matrix[drone.id][cluster.id]
@@ -155,14 +160,10 @@ class ClusterFrontierAssigner(FrontierAssigner):
         if cost == float("inf"):
             return float("-inf")
 
-        load = self.cluster_assignment_counts[cluster.id]
-
         return (
                 ig
                 /
                 (cost + 1)
-                /
-                (1 + load)
         )
 
     def assign(
@@ -199,9 +200,6 @@ class ClusterFrontierAssigner(FrontierAssigner):
         }
         
         self.num_clusters = len(clusters)
-        
-        # Reset cluster assignment counts
-        self.cluster_assignment_counts = {cluster.id: 0 for cluster in clusters}
 
         cost_matrix = self._build_cost_matrix(
             drones,
@@ -252,6 +250,8 @@ class ClusterFrontierAssigner(FrontierAssigner):
                         drone,
                         cluster,
                         cost_matrix,
+                        drones,
+                        robot_map
                     )
                 )
 
@@ -295,6 +295,8 @@ class ClusterFrontierAssigner(FrontierAssigner):
                         drone,
                         cluster,
                         cost_matrix,
+                        drones,
+                        robot_map,
                     )
                 )
 
@@ -325,8 +327,6 @@ class ClusterFrontierAssigner(FrontierAssigner):
                     "information_gain": best_cluster.information_gain,
                 }
 
-                # Increment assignment count for this cluster
-                self.cluster_assignment_counts[best_cluster.id] += 1
                 assigned_count += 1
 
         self.num_assigned_drones = assigned_count

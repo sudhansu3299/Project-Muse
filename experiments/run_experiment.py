@@ -84,11 +84,13 @@ def run_experiment(
         # Get cluster and active drone metrics
         num_clusters = 0
         num_active_drones = 0
-        
+        nodes_expanded = 0
+
         if hasattr(simulator.strategy, 'get_metrics'):
             metrics = simulator.strategy.get_metrics()
             num_clusters = metrics.get('num_clusters', 0)
             num_active_drones = metrics.get('num_assigned_drones', 0)
+            nodes_expanded = metrics.get('nodes_expanded', 0)
 
         # Get exploration efficiency
         exploration_efficiency = simulator.get_exploration_efficiency()
@@ -110,7 +112,8 @@ def run_experiment(
             num_active_drones=num_active_drones,
             exploration_efficiency=exploration_efficiency,
             mean_pairwise_distance=mean_pairwise_distance,
-            movement_efficiency=movement_efficiency
+            movement_efficiency=movement_efficiency,
+            nodes_expanded=nodes_expanded
         )
 
         # Stop if target coverage reached
