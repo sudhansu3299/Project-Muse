@@ -699,10 +699,11 @@ Potential extensions include:
 - [x] PPO training
 - [x] Learned utility weights
 - [x] PPO evaluation on unseen maps
+- [x] Ablation studies
+- [x] Final plots and statistical analysis
       
 ### In Progress
-- [ ] Ablation studies
-- [ ] Final plots and statistical analysis
+- [ ] Future work consideration
 ---
 
 # 13. References
