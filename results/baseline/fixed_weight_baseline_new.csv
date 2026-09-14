@@ -1,0 +1,2 @@
+seed,method,checkpoint,steps,reached_90,final_coverage,total_distance,final_redundancy,total_reward,mean_redundancy,mean_reward,alpha,beta,gamma,delta
+115,fixed,baseline,566,True,90.07,2830,88.8407071971058,670.3592928028934,88.34351685092908,1.1843803759768445,1.0,0.5,0.5,0.1

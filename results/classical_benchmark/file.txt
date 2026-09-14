@@ -1,0 +1,147 @@
+Variant D:
+===== SEED 105 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 649
+
+===== SEED 106 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 650
+
+===== SEED 107 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 667
+
+===== SEED 108 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 718
+
+===== SEED 109 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 643
+
+===== SEED 110 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 698
+
+===== SEED 111 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 750
+
+===== SEED 112 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 635
+
+===== SEED 113 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 642
+
+===== SEED 114 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 695
+
+===== SEED 115 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 713
+
+Variant B:
+===== SEED 105 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 678
+
+===== SEED 106 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 650
+
+===== SEED 107 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 667
+
+===== SEED 108 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 707
+
+===== SEED 109 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 643
+
+===== SEED 110 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 698
+
+===== SEED 111 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 750
+
+===== SEED 112 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 635
+
+===== SEED 113 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 642
+
+===== SEED 114 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 695
+
+===== SEED 115 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 742
+
+Variant C:
+===== SEED 105 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 628
+
+===== SEED 106 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 757
+
+===== SEED 107 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 759
+
+===== SEED 108 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 655
+
+===== SEED 109 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 600
+
+===== SEED 110 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 618
+
+===== SEED 111 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 634
+
+===== SEED 112 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 736
+
+===== SEED 113 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 687
+
+===== SEED 114 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 624
+
+===== SEED 115 =====
+  Running cluster_frontier...
+    ✓ Reached 90% at step 725
+
+variant A:
+cluster_frontier,105,714
+cluster_frontier,106,691
+cluster_frontier,107,698
+cluster_frontier,108,654
+cluster_frontier,109,625
+cluster_frontier,110,672
+cluster_frontier,111,715
+cluster_frontier,112,775
+cluster_frontier,113,696
+cluster_frontier,114,641
+cluster_frontier,115,643
