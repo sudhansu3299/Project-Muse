@@ -18,6 +18,13 @@ class PPOMetricsCallback(BaseCallback):
         self.episode = 0
         self.episode_rewards = []
 
+        # Episode tracking
+        self.episode_seed = None
+        self.episode_steps = 0
+        self.episode_total_reward = 0.0
+        self.episode_final_coverage = None
+        self.episode_final_redundancy = None
+
         os.makedirs(
             os.path.dirname(log_path),
             exist_ok=True,
@@ -74,6 +81,13 @@ class PPOMetricsCallback(BaseCallback):
 
         reward = self.locals["rewards"][0]
 
+        # Track episode metrics
+        self.episode_steps += 1
+        self.episode_total_reward += float(reward)
+        self.episode_final_coverage = info.get("coverage")
+        self.episode_final_redundancy = info.get("redundancy")
+        self.episode_seed = info.get("seed")
+
         self.writer.writerow([
             self.num_timesteps,
 
@@ -109,7 +123,23 @@ class PPOMetricsCallback(BaseCallback):
         dones = self.locals.get("dones")
 
         if dones is not None and dones[0]:
+            # Print episode summary
+            print()
+            print(f"========== EPISODE {self.episode} ==========")
+            print(f"Seed: {self.episode_seed if self.episode_seed is not None else 'N/A'}")
+            print(f"Steps: {self.episode_steps}")
+            print(f"Final coverage: {self.episode_final_coverage:.2f}%")
+            print(f"Total reward: {self.episode_total_reward:.2f}")
+            print(f"Final redundancy: {self.episode_final_redundancy:.2f}%")
+            print("=" * 40)
+            
+            # Reset episode tracking
             self.episode += 1
+            self.episode_steps = 0
+            self.episode_total_reward = 0.0
+            self.episode_final_coverage = None
+            self.episode_final_redundancy = None
+            self.episode_seed = None
 
         return True
 

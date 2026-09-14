@@ -41,6 +41,9 @@ class ExplorationEnv(gym.Env):
 
         self.last_action = None
 
+        self.training_seeds = None
+        self.training_seed_index = 0
+
         # ==================================================
         # ACTION SPACE
         # ==================================================
@@ -138,6 +141,19 @@ class ExplorationEnv(gym.Env):
         self.previous_distance = 0.0
         self.previous_redundancy = 0.0
 
+        # ==================================================
+        # CURRENT SEED
+        # ==================================================
+
+        self.current_seed = None
+
+
+    def set_training_seeds(self, seeds):
+
+        self.training_seeds = list(seeds)
+
+        self.training_seed_index = 0
+
     # ======================================================
     # RESET
     # ======================================================
@@ -151,11 +167,24 @@ class ExplorationEnv(gym.Env):
 
         super().reset(seed=seed)
 
-        # Use the Gymnasium seed for the simulation map.
-        map_seed = seed
+        if self.training_seeds is not None:
 
-        print("\n========== STRATEGY BEFORE RESET ==========")
-        print(self.strategy)
+            map_seed = self.training_seeds[
+                self.training_seed_index
+            ]
+
+            self.training_seed_index = (
+                                               self.training_seed_index + 1
+                                       ) % len(self.training_seeds)
+
+        else:
+            map_seed = seed
+
+        self.current_seed = map_seed
+
+
+        # print("\n========== STRATEGY BEFORE RESET ==========")
+        # print(self.strategy)
 
         if hasattr(self.strategy, "reset"):
             self.strategy.reset()
@@ -174,8 +203,8 @@ class ExplorationEnv(gym.Env):
             map_seed=map_seed,
         )
 
-        print("\n========== STRATEGY AFTER SIMULATOR RESET ==========")
-        print(self.strategy)
+        # print("\n========== STRATEGY AFTER SIMULATOR RESET ==========")
+        # print(self.strategy)
 
         # --------------------------------------------------
         # Reset utility weights to defaults
@@ -365,6 +394,7 @@ class ExplorationEnv(gym.Env):
                 active_drones += 1
 
         info = {
+            "seed": self.current_seed,
             "coverage": current_coverage,
             "distance": current_distance,
             "redundancy": current_redundancy,

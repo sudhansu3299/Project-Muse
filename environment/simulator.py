@@ -88,7 +88,7 @@ class Simulator:
             ):
                 free_neighbors += 1
 
-        return free_neighbors >= 2
+        return free_neighbors >= 1
 
     def _find_start_positions(self, num_drones):
         """
@@ -101,7 +101,7 @@ class Simulator:
         positions = []
 
         # Search progressively farther from the top-left corner
-        for radius in range(1, 15):
+        for radius in range(1, 30):
 
             for y in range(1, radius + 1):
                 for x in range(1, radius + 1):

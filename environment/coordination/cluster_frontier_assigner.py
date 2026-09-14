@@ -36,10 +36,11 @@ class ClusterFrontierAssigner(FrontierAssigner):
             
             # Sort by distance and take nearest 3
             cluster_distances.sort(key=lambda x: x[0])
-            nearest_clusters = cluster_distances[:3]
+            # nearest_clusters = cluster_distances[:3]
+            nearest_clusters = clusters
             
             # Run BFS only on nearest 3 clusters
-            for _, cluster in nearest_clusters:
+            for cluster in nearest_clusters:
                 path = self.planner.find_path(
                     start=(drone.x, drone.y),
                     goal=cluster.centroid,
@@ -55,13 +56,13 @@ class ClusterFrontierAssigner(FrontierAssigner):
                 }
             
             # Set infinite cost for remaining clusters
-            for _, cluster in cluster_distances[3:]:
-                cost_matrix[drone.id][cluster.id] = {
-                    "cluster": cluster,
-                    "path": None,
-                    "cost": float("inf"),
-                    "ig": cluster.information_gain,
-                }
+            # for _, cluster in cluster_distances[3:]:
+            #     cost_matrix[drone.id][cluster.id] = {
+            #         "cluster": cluster,
+            #         "path": None,
+            #         "cost": float("inf"),
+            #         "ig": cluster.information_gain,
+            #     }
         
         return cost_matrix
 

@@ -40,10 +40,10 @@ class HungarianFrontierAssigner(
 
             # Sort by distance and take nearest 3
             cluster_distances.sort(key=lambda x: x[0])
-            # nearest_clusters = cluster_distances[:3]
+            nearest_clusters = cluster_distances[:3]
 
             # Run BFS only on nearest 3 clusters
-            for _, cluster in cluster_distances:
+            for _, cluster in nearest_clusters:
                 path = self.planner.find_path(
                     start=(drone.x, drone.y),
                     goal=cluster.centroid,
@@ -55,6 +55,15 @@ class HungarianFrontierAssigner(
                     "cluster": cluster,
                     "path": path,
                     "cost": len(path) if path else float("inf"),
+                    "ig": cluster.information_gain,
+                }
+
+            # Set infinite cost for remaining clusters
+            for _, cluster in cluster_distances[3:]:
+                cost_matrix[drone.id][cluster.id] = {
+                    "cluster": cluster,
+                    "path": None,
+                    "cost": float("inf"),
                     "ig": cluster.information_gain,
                 }
 

@@ -105,21 +105,60 @@ def draw_drones(screen, drones):
 
     for drone in drones:
 
+        # Draw LIDAR sensing rays
+        sensor_radius = drone.sensor_radius
+        drone_center_x = (
+            PANEL_WIDTH
+            + PADDING
+            + drone.x * CELL_SIZE
+            + CELL_SIZE // 2
+        )
+        drone_center_y = (
+            TOP_MARGIN
+            + drone.y * CELL_SIZE
+            + CELL_SIZE // 2
+        )
+
+        # Draw sensing circle with semi-transparent effect
+        sensor_surface = pygame.Surface(
+            (sensor_radius * 2 * CELL_SIZE, sensor_radius * 2 * CELL_SIZE),
+            pygame.SRCALPHA
+        )
+        pygame.draw.circle(
+            sensor_surface,
+            (100, 149, 237, 50),  # Cornflower blue with transparency
+            (sensor_radius * CELL_SIZE, sensor_radius * CELL_SIZE),
+            sensor_radius * CELL_SIZE
+        )
+        screen.blit(
+            sensor_surface,
+            (drone_center_x - sensor_radius * CELL_SIZE,
+             drone_center_y - sensor_radius * CELL_SIZE)
+        )
+
+        # Draw sensing rays (8 directions)
+        ray_length = sensor_radius * CELL_SIZE
+        ray_color = (100, 149, 237, 150)  # More opaque for rays
+        for angle in range(0, 360, 45):
+            import math
+            rad = math.radians(angle)
+            end_x = drone_center_x + ray_length * math.cos(rad)
+            end_y = drone_center_y + ray_length * math.sin(rad)
+            pygame.draw.line(
+                screen,
+                ray_color,
+                (drone_center_x, drone_center_y),
+                (end_x, end_y),
+                1
+            )
+
+        # Draw drone body
         pygame.draw.circle(
             screen,
             DRONE_COLOR,
-            (
-                PANEL_WIDTH
-                + PADDING
-                + drone.x * CELL_SIZE
-                + CELL_SIZE // 2,
-
-                TOP_MARGIN
-                + drone.y * CELL_SIZE
-                + CELL_SIZE // 2,
-            ),
+            (drone_center_x, drone_center_y),
             CELL_SIZE // 2,
-            )
+        )
 
 def draw_clusters(
         screen,
