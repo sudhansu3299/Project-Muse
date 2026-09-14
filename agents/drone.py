@@ -53,6 +53,8 @@ class Drone:
 
         self.update_map(true_map, robot_map)
 
+        return action
+
 #Sense basically updates the sensor of the drone with LIDAR/sensor that can
 #sense at once rather than one cell at a time
     def sense(self, true_map, robot_map):

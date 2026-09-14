@@ -2,6 +2,7 @@ from collections import Counter
 from environment.grid import OccupancyGrid
 from agents.drone import Drone
 from models.constants import Cell
+from models.action import Action
 
 
 # Simulator captures the state of the environment
@@ -87,7 +88,7 @@ class Simulator:
             ):
                 free_neighbors += 1
 
-        return free_neighbors >= 2
+        return free_neighbors >= 1
 
     def _find_start_positions(self, num_drones):
         """
@@ -100,7 +101,7 @@ class Simulator:
         positions = []
 
         # Search progressively farther from the top-left corner
-        for radius in range(1, 15):
+        for radius in range(1, 30):
 
             for y in range(1, radius + 1):
                 for x in range(1, radius + 1):
@@ -129,6 +130,8 @@ class Simulator:
             self.robot_map
         )
 
+        stay_drones = 0
+
         for drone in self.drones:
 
             neighbours = self.get_nearby_agents(
@@ -137,13 +140,18 @@ class Simulator:
 
             # Drone asks its strategy for an action,
             # executes it, and updates the robot map.
-            drone.step(
+            action = drone.step(
                 self.true_map,
                 self.robot_map,
                 neighbours
             )
 
+            if action == Action.STAY:
+                stay_drones += 1
+
         self.timestep += 1
+
+        return stay_drones
 
     def get_nearby_agents(self, drone):
         """

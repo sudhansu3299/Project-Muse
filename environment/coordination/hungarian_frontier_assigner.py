@@ -14,6 +14,11 @@ class HungarianFrontierAssigner(
 
         self.total_nodes_expanded = 0
 
+        self.assignment_failures = {
+            "no_centroid_path": 0,
+            "no_frontier_path": 0,
+        }
+
     def _build_cost_matrix(
             self,
             drones,
@@ -35,10 +40,10 @@ class HungarianFrontierAssigner(
 
             # Sort by distance and take nearest 3
             cluster_distances.sort(key=lambda x: x[0])
-            # nearest_clusters = cluster_distances[:3]
+            nearest_clusters = cluster_distances[:3]
 
             # Run BFS only on nearest 3 clusters
-            for _, cluster in cluster_distances:
+            for _, cluster in nearest_clusters:
                 path = self.planner.find_path(
                     start=(drone.x, drone.y),
                     goal=cluster.centroid,
@@ -53,6 +58,15 @@ class HungarianFrontierAssigner(
                     "ig": cluster.information_gain,
                 }
 
+            # Set infinite cost for remaining clusters
+            for _, cluster in cluster_distances[3:]:
+                cost_matrix[drone.id][cluster.id] = {
+                    "cluster": cluster,
+                    "path": None,
+                    "cost": float("inf"),
+                    "ig": cluster.information_gain,
+                }
+
         return cost_matrix
 
     def _build_utility_matrix(
@@ -60,110 +74,139 @@ class HungarianFrontierAssigner(
             drones,
             clusters,
             cost_matrix,
-            robot_map
+            robot_map,
     ):
         """
         Build a drone x cluster utility matrix.
-
-        Rows    -> drones
-        Columns -> clusters
         """
-
-        # --------------------------------------------------
-        # First pass: collect all metrics for normalization
-        # --------------------------------------------------
-
-        all_ig = []
-        all_cost = []
-        all_redundancy = []
-        all_cluster_size = []
 
         metrics_matrix = []
 
+        # Fixed normalization scales
+        COST_SCALE = 200.0
+        SIZE_SCALE = 50.0
+
         for drone in drones:
+
             row_metrics = []
+
             for cluster in clusters:
-                entry = cost_matrix[drone.id][cluster.id]
+
+                entry = cost_matrix[
+                    drone.id
+                ][
+                    cluster.id
+                ]
+
                 ig = entry["ig"]
                 cost = entry["cost"]
 
-                predicted_redundancy = self._estimate_redundancy(
-                    drone,
-                    cluster.centroid,
-                    robot_map
+                predicted_redundancy = (
+                    self._estimate_redundancy(
+                        drone,
+                        cluster.centroid,
+                        robot_map,
+                    )
                 )
-                cluster_size = len(cluster.cells)
 
-                all_ig.append(ig)
-                all_cost.append(cost)
-                all_redundancy.append(predicted_redundancy)
-                all_cluster_size.append(cluster_size)
+                cluster_size = len(
+                    cluster.cells
+                )
+
+                # ------------------------------------------
+                # Fixed feature-wise normalization
+                # ------------------------------------------
+
+                normalized_ig = max(
+                    0.0,
+                    min(1.0, ig),
+                )
+
+                if cost == float("inf"):
+
+                    normalized_cost = float("inf")
+
+                else:
+
+                    normalized_cost = max(
+                        0.0,
+                        min(
+                            1.0,
+                            cost / COST_SCALE,
+                            ),
+                    )
+
+                normalized_redundancy = max(
+                    0.0,
+                    min(
+                        1.0,
+                        predicted_redundancy,
+                    ),
+                )
+
+                normalized_cluster_size = max(
+                    0.0,
+                    min(
+                        1.0,
+                        cluster_size / SIZE_SCALE,
+                        ),
+                )
 
                 row_metrics.append({
                     "ig": ig,
                     "cost": cost,
-                    "redundancy": predicted_redundancy,
-                    "cluster_size": cluster_size,
+                    "redundancy":
+                        predicted_redundancy,
+                    "cluster_size":
+                        cluster_size,
+
+                    "normalized_ig":
+                        normalized_ig,
+                    "normalized_cost":
+                        normalized_cost,
+                    "normalized_redundancy":
+                        normalized_redundancy,
+                    "normalized_cluster_size":
+                        normalized_cluster_size,
                 })
 
-            metrics_matrix.append(row_metrics)
+            metrics_matrix.append(
+                row_metrics
+            )
 
-        # --------------------------------------------------
-        # Normalize metrics to [0, 1] range
-        # --------------------------------------------------
-
-        from environment.utils.frontier_utility import FrontierUtility
-
-        normalized_ig = FrontierUtility.normalize_min_max(all_ig)
-
-        # Handle infinite costs - normalize only finite values
-        finite_costs = [c for c in all_cost if c != float("inf")]
-        normalized_finite_costs = FrontierUtility.normalize_min_max(finite_costs) if finite_costs else []
-
-        # Map normalized values back, preserving infinity
-        normalized_cost = []
-        cost_idx = 0
-        for cost in all_cost:
-            if cost == float("inf"):
-                normalized_cost.append(float("inf"))
-            else:
-                normalized_cost.append(normalized_finite_costs[cost_idx])
-                cost_idx += 1
-
-        normalized_redundancy = FrontierUtility.normalize_min_max(all_redundancy)
-        normalized_cluster_size = FrontierUtility.normalize_min_max(all_cluster_size)
-
-        # --------------------------------------------------
-        # Second pass: calculate utilities with normalized values
-        # --------------------------------------------------
+        # ------------------------------------------
+        # Calculate utility
+        # ------------------------------------------
 
         utility_matrix = []
-        idx = 0
 
         for drone_idx, drone in enumerate(drones):
+
             row = []
+
             for cluster_idx, cluster in enumerate(clusters):
-                metrics = metrics_matrix[drone_idx][cluster_idx]
+
+                metrics = metrics_matrix[
+                    drone_idx
+                ][
+                    cluster_idx
+                ]
 
                 utility = self.utility.calculate(
-                    base_information_gain=normalized_ig[idx],
-                    path_cost=normalized_cost[idx],
-                    redundancy=normalized_redundancy[idx],
-                    cluster_size=normalized_cluster_size[idx],
+                    base_information_gain=
+                    metrics["normalized_ig"],
+
+                    path_cost=
+                    metrics["normalized_cost"],
+
+                    redundancy=
+                    metrics["normalized_redundancy"],
+
+                    cluster_size=
+                    metrics["normalized_cluster_size"],
                 )
 
-                # print(
-                #     f"Drone={drone.id}, "
-                #     f"Cluster={cluster.id}, "
-                #     f"IG={metrics['ig']:.2f} (norm={normalized_ig[idx]:.2f}), "
-                #     f"Cost={metrics['cost']} (norm={normalized_cost[idx]:.2f}), "
-                #     f"Redundancy={metrics['redundancy']:.2f} (norm={normalized_redundancy[idx]:.2f}), "
-                #     f"ClusterSize={metrics['cluster_size']} (norm={normalized_cluster_size[idx]:.2f}), "
-                #     f"Utility={utility:.2f}"
-                # )
-
                 row.append(utility)
-                idx += 1
 
             utility_matrix.append(row)
 
@@ -174,6 +217,12 @@ class HungarianFrontierAssigner(
             drones,
             robot_map,
     ):
+
+        # Reset assignment failure counters
+        self.assignment_failures = {
+            "no_centroid_path": 0,
+            "no_frontier_path": 0,
+        }
 
         # --------------------------------------------------
         # 1. Detect frontiers
@@ -226,6 +275,14 @@ class HungarianFrontierAssigner(
         # 4. Build utility matrix
         # --------------------------------------------------
 
+        # print(
+        #     f"\nWeights: "
+        #     f"alpha={self.utility.alpha:.3f}, "
+        #     f"beta={self.utility.beta:.3f}, "
+        #     f"gamma={self.utility.gamma:.3f}, "
+        #     f"delta={self.utility.delta:.3f}"
+        # )
+
         utility_matrix = self._build_utility_matrix(
             drones,
             clusters,
@@ -256,6 +313,17 @@ class HungarianFrontierAssigner(
         row_indices, col_indices = linear_sum_assignment(
             assignment_cost_matrix
         )
+
+        # print("\n========== HUNGARIAN RESULT ==========")
+        #
+        # for row, col in zip(row_indices, col_indices):
+        #
+        #     # if self.num_assigned_drones <= 1:
+        #         print(
+        #             f"Drone={drones[row].id}, "
+        #             f"Cluster={clusters[col].id}, "
+        #             f"Utility={utility_matrix[row][col]:.4f}"
+        #         )
 
         # --------------------------------------------------
         # 7. Convert result into assignments
@@ -297,6 +365,9 @@ class HungarianFrontierAssigner(
 
             # No reachable path
             if entry["path"] is None:
+                self.assignment_failures[
+                    "no_centroid_path"
+                ] += 1
                 continue
 
             # --------------------------------------------------
@@ -312,6 +383,9 @@ class HungarianFrontierAssigner(
             )
 
             if target_cell is None or path is None:
+                self.assignment_failures[
+                    "no_frontier_path"
+                ] += 1
                 continue
 
             assignments[drone.id] = {

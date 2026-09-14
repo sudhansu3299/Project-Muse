@@ -36,68 +36,68 @@ strategies = {
     #     GreedyFrontierAssigner()
     # ),
     #
-    # "cluster_frontier": lambda: FrontierStrategy(
-    #     ClusterFrontierAssigner(BFSPlanner())
+    "cluster_frontier": lambda: FrontierStrategy(
+        ClusterFrontierAssigner(BFSPlanner())
+    ),
+
+    "cluster_utility_frontier": lambda: FrontierStrategy(
+        ClusterFrontierUtilityAssigner(planner=BFSPlanner(), utility=utility)
+    ),
+
+    "hungarian_bfs_frontier": lambda: FrontierStrategy(
+        HungarianFrontierAssigner(planner=BFSPlanner(), utility=utility)
+    ),
+    "hungarian_astar_frontier": lambda: FrontierStrategy(
+        HungarianFrontierAssigner(planner=AStarPlanner(), utility=utility)
+    ),
+
+    # "hungarian_a": lambda: FrontierStrategy(
+    #     HungarianFrontierAssigner(
+    #         planner=BFSPlanner(),
+    #         utility=FrontierUtility(
+    #             alpha=1.0,
+    #             beta=0.5,
+    #             gamma=0,
+    #             delta=0
+    #         ),
+    #     )
     # ),
     #
-    # "cluster_utility_frontier": lambda: FrontierStrategy(
-    #     ClusterFrontierUtilityAssigner(BFSPlanner())
+    # "hungarian_b": lambda: FrontierStrategy(
+    #     HungarianFrontierAssigner(
+    #         planner=BFSPlanner(),
+    #         utility=FrontierUtility(
+    #             alpha=1.0,
+    #             beta=0.5,
+    #             gamma=0.5,
+    #             delta=0
+    #         ),
+    #     )
     # ),
-
-    # "hungarian_bfs_frontier": lambda: FrontierStrategy(
-    #     HungarianFrontierAssigner(planner=BFSPlanner(), utility=utility)
+    #
+    # "hungarian_c": lambda: FrontierStrategy(
+    #     HungarianFrontierAssigner(
+    #         planner=BFSPlanner(),
+    #         utility=FrontierUtility(
+    #             alpha=1.0,
+    #             beta=0.5,
+    #             gamma=0,
+    #             delta=0.1
+    #         ),
+    #     )
     # ),
-    # "hungarian_astar_frontier": lambda: FrontierStrategy(
-    #     HungarianFrontierAssigner(planner=AStarPlanner(), utility=utility)
+    #
+    # "hungarian_d": lambda: FrontierStrategy(
+    #     HungarianFrontierAssigner(
+    #         planner=BFSPlanner(),
+    #         utility=FrontierUtility(
+    #             alpha=1.0,
+    #             beta=0.5,
+    #             gamma=0.5,
+    #             delta=0.1
+    #         ),
+    #     )
     # ),
-
-    "hungarian_a": lambda: FrontierStrategy(
-        HungarianFrontierAssigner(
-            planner=BFSPlanner(),
-            utility=FrontierUtility(
-                alpha=1.0,
-                beta=0.5,
-                gamma=0,
-                delta=0
-            ),
-        )
-    ),
-
-    "hungarian_b": lambda: FrontierStrategy(
-        HungarianFrontierAssigner(
-            planner=BFSPlanner(),
-            utility=FrontierUtility(
-                alpha=1.0,
-                beta=0.5,
-                gamma=0.5,
-                delta=0
-            ),
-        )
-    ),
-
-    "hungarian_c": lambda: FrontierStrategy(
-        HungarianFrontierAssigner(
-            planner=BFSPlanner(),
-            utility=FrontierUtility(
-                alpha=1.0,
-                beta=0.5,
-                gamma=0,
-                delta=0.1
-            ),
-        )
-    ),
-
-    "hungarian_d": lambda: FrontierStrategy(
-        HungarianFrontierAssigner(
-            planner=BFSPlanner(),
-            utility=FrontierUtility(
-                alpha=1.0,
-                beta=0.5,
-                gamma=0.5,
-                delta=0.1
-            ),
-        )
-    ),
 }
 
 

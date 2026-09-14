@@ -1,0 +1,5 @@
+strategy,time_to_90,distance,sensing_redundancy,visit_overlap,movement_efficiency,nodes_expanded,num_successful_runs
+cluster_frontier,670 ± 63,3352 ± 316,90.5% ± 0.9%,8.6% ± 3.3%,0.829 ± 0.032,111414393 ± 23630849,11
+cluster_utility,688 ± 48,3439 ± 240,90.7% ± 0.6%,8.3% ± 2.9%,0.835 ± 0.029,105800904 ± 13279571,11
+hungarian_utility_bfs,652 ± 40,3260 ± 202,90.3% ± 0.6%,11.2% ± 2.0%,0.794 ± 0.017,1881717 ± 298805,11
+hungarian_utility_astar,674 ± 64,3370 ± 320,90.5% ± 0.8%,11.9% ± 3.2%,0.783 ± 0.029,3067175309 ± 372152156,11

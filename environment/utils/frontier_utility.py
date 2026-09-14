@@ -5,6 +5,9 @@ U=α⋅Information Gain−β⋅Path Cost−γ⋅Redundancy [+δ⋅Cluster Size] 
 
 class FrontierUtility:
 
+    COST_SCALE = 200.0
+    SIZE_SCALE = 50.0
+
     def __init__(
             self,
             alpha=1.0,
@@ -48,6 +51,32 @@ class FrontierUtility:
             (v - min_val) / (max_val - min_val)
             for v in values
         ]
+
+    @staticmethod
+    def _clip01(value):
+        return max(0.0, min(1.0, value))
+
+    @classmethod
+    def normalize_information_gain(cls, ig):
+        return cls._clip01(ig)
+
+    @classmethod
+    def normalize_cost(cls, cost):
+        return cls._clip01(
+            cost / cls.COST_SCALE
+        )
+
+    @classmethod
+    def normalize_redundancy(cls, redundancy):
+        return cls._clip01(
+            redundancy / 100.0
+        )
+
+    @classmethod
+    def normalize_cluster_size(cls, size):
+        return cls._clip01(
+            size / cls.SIZE_SCALE
+        )
 
     def calculate(
             self,
